@@ -19,6 +19,7 @@ export default function Home() {
 
   useEffect(() => {
     // Load default city weather on mount
+    // eslint-disable-next-line
     loadCityWeather(DEFAULT_CITY);
   }, []);
 
