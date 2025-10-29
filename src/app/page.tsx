@@ -11,7 +11,6 @@ import { WeatherData } from "@/types/weather";
 
 // Default city to display on load
 const DEFAULT_CITY = "Durham";
-
 export default function Home() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
