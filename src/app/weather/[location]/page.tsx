@@ -198,7 +198,7 @@ export default async function WeatherDetailPage({ params }: PageProps) {
           {/* NEW: View All Cities button with icon */}
           <Button 
             href="/weather/all-cities" 
-            variant="ghost" 
+            variant="default" 
             className="font-light px-8 py-4"
             icon={<MapPin size={18} strokeWidth={2} />}
             iconPosition="left"

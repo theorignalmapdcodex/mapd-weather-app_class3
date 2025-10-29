@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { CITIES } from "@/data/cities";
 import { getDummyWeatherData } from "@/data/weather-data";
 import Link from "next/link";
@@ -26,6 +27,16 @@ export default function AllCitiesPage() {
       <div className="max-w-6xl mx-auto">
         {/* NEW: Page Header Section */}
         <div className="mb-12 text-center">
+          
+          {/* NEW: Logo image above title */}
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/city-images/weather-app_logo.png" 
+              alt="Weather App Logo" 
+              className="w-20 h-20 md:w-24 md:h-24"
+            />
+          </div>
+
           <h1 className="text-5xl md:text-6xl font-light mb-4 tracking-tight">
             Weather Overview
           </h1>
