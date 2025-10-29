@@ -108,7 +108,7 @@ export function WeatherDisplay({ weather }: WeatherDisplayProps) {
         {/* NEW: View All Cities button with icon */}
         <Button 
           href="/weather/all-cities"
-          variant="ghost"
+          variant="default"
           className="flex-1 font-light"
           icon={<MapPin size={18} strokeWidth={2} />}
           iconPosition="left"

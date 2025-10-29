@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
@@ -48,6 +49,15 @@ export default function Home() {
         
         {/* MODIFIED: Updated header styling for minimalistic theme */}
         <div className="text-center mb-8">
+          {/* NEW: Logo image above title */}
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/city-images/weather-app_logo.png" 
+              alt="Weather App Logo" 
+              className="w-20 h-20 md:w-24 md:h-24"
+            />
+          </div>
+          
           <h1 className="text-5xl md:text-6xl font-light mb-3 tracking-tight text-gray-900">
             Weather App
           </h1>
