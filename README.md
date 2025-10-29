@@ -1,4 +1,4 @@
-# Weather App
+# The 'Original' Weather App
 
 A simple weather application built with Next.js 16, TypeScript, and Tailwind CSS for teaching basic React concepts.
 
