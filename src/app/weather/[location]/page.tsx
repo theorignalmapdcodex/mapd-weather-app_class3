@@ -207,6 +207,13 @@ export default async function WeatherDetailPage({ params }: PageProps) {
           </Button>
         </div>
 
+                {/* NEW: Footer */}
+        <footer className="mt-12 text-center pb-8">
+          <p className="text-gray-500 text-sm font-light">
+            Made with 🖤 by @theoriginalmapd
+          </p>
+        </footer>
+
       </main>
     </div>
   );

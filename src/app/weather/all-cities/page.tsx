@@ -164,6 +164,14 @@ export default function AllCitiesPage() {
             ← Back to Home
           </Link>
         </div>
+
+                {/* NEW: Footer */}
+        <footer className="mt-12 text-center pb-8">
+          <p className="text-gray-500 text-sm font-light">
+            Made with 🖤 by @theoriginalmapd
+          </p>
+        </footer>
+
       </div>
     </div>
   );

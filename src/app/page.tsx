@@ -82,6 +82,14 @@ export default function Home() {
         {loading && <LoadingState />}
         {error && <ErrorMessage message={error} />}
         {weather && !loading && <WeatherDisplay weather={weather} />}
+
+        {/* NEW: Footer */}
+        <footer className="mt-12 text-center pb-8">
+          <p className="text-gray-500 text-sm font-light">
+            Made with 🖤 by @theoriginalmapd
+          </p>
+        </footer>
+
       </main>
     </div>
   );
