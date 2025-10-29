@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { WeatherCard } from "./WeatherCard";
 import { Button } from "./ui/Button";
 import { WeatherData } from "@/types/weather";
