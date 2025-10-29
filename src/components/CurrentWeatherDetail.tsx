@@ -21,7 +21,7 @@ export function CurrentWeatherDetail({
       <div className="grid md:grid-cols-2 gap-8">
         {/* Left side - Main weather */}
         <div className="flex flex-col items-center justify-center space-y-4">
-          <WeatherIcon code={current.condition.code} size="xl" />
+          <WeatherIcon code={current.condition.code} size={96} />
           <div className="text-center">
             <div className="text-6xl font-bold text-zinc-900 dark:text-white">
               {current.temperature}°F

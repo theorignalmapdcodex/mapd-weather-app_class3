@@ -29,7 +29,7 @@ export function ForecastCard({ forecast }: ForecastCardProps) {
             </p>
 
             <div className="flex justify-center mb-3">
-              <WeatherIcon code={day.condition.code} size="lg" />
+              <WeatherIcon code={day.condition.code} size={64} />
             </div>
 
             <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
