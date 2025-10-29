@@ -148,7 +148,7 @@ export default function AllCitiesPage() {
         <div className="mt-12 text-center">
           <Link
             href="/"
-            className="text-gray-500 hover:text-gray-700 font-light text-sm transition-colors"
+            className="text-gray-600 hover:text-gray-900 font-light text-sm transition-colors" // MODIFIED: Changed from gray-500/700 to gray-600/900
           >
             ← Back to Home
           </Link>

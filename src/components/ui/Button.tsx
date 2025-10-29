@@ -37,11 +37,11 @@ export function Button({
   const baseStyles =
     "inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors"; // MODIFIED: Added gap-2 for icon spacing
 
-  // Variant-specific styles - MODIFIED: Updated for minimalistic theme
+  // Variant-specific styles - MODIFIED: Changed to black/white theme from blue
   const variantStyles = {
-    default: "bg-blue-600 text-white hover:bg-blue-700 shadow-sm",
+    default: "bg-gray-900 text-white hover:bg-gray-800 shadow-sm", // Black background, white text
     ghost:
-      "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20",
+      "text-gray-900 hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800", // Dark gray text instead of blue
   };
 
   // Combine all styles
