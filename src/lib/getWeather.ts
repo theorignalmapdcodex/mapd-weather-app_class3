@@ -1,4 +1,4 @@
-import { getDummyWeatherData } from "@/data/weather-data";
+// MODIFIED: Removed getDummyWeatherData import - no longer using fallback to dummy data [import { getDummyWeatherData } from "@/data/weather-data";]
 import { WeatherData } from "@/types/weather";
 import { getCityByName } from "@/data/cities";
 import { getWeatherDescription } from "@/types/weather";
@@ -7,7 +7,7 @@ import { getWeatherDescription } from "@/types/weather";
  * Get weather data for a city
  *
  * MODIFIED: Now fetches real data from Open-Meteo API
- * Falls back to dummy data if API fails
+ * Falls back to returning null if API fails (no dummy data)
  */
 
 // ========================================
@@ -22,7 +22,7 @@ import { getWeatherDescription } from "@/types/weather";
 // ========================================
 
 /**
- * Fetches real weather data from Open-Meteo API
+ * Fetches real weather data from Open-Meteo API using city name
  * 
  * @param cityName - Name of the city to get weather for
  * @returns Promise with WeatherData or null if city not found
@@ -36,13 +36,41 @@ export async function getWeatherData(cityName: string): Promise<WeatherData | nu
     
     if (!city) {
       console.error(`City "${cityName}" not found in cities list`);
-      return getDummyWeatherData(cityName); // Fallback to dummy data
+      return null; // MODIFIED: Return null instead of dummy data
     }
 
+    return await getWeatherByCoordinates(city.name, city.latitude, city.longitude);
+
+  } catch (error) {
+    // MODIFIED: Return null instead of dummy data so user sees the error
+    // Log error for debugging
+    console.error(`Error fetching weather data for ${cityName}:`, error);
+    console.log(`API call failed - returning null to show error to user`);
+    
+    // Return null to trigger error state in UI
+    return null;
+  }
+}
+
+/**
+ * NEW FUNCTION: Fetch weather data using coordinates directly
+ * Used for dynamic city search where we geocode first, then fetch weather
+ * 
+ * @param cityName - Name of the city (for display)
+ * @param latitude - Latitude coordinate
+ * @param longitude - Longitude coordinate
+ * @returns Promise with WeatherData or null if fetch fails
+ */
+export async function getWeatherByCoordinates(
+  cityName: string,
+  latitude: number,
+  longitude: number
+): Promise<WeatherData | null> {
+  try {
     // Step 2: Build Open-Meteo API URL with parameters
     const params = new URLSearchParams({
-      latitude: city.latitude.toString(),
-      longitude: city.longitude.toString(),
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
       current: 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m',
       daily: 'weather_code,temperature_2m_max,temperature_2m_min',
       temperature_unit: 'fahrenheit', // Get temps in Fahrenheit
@@ -65,9 +93,9 @@ export async function getWeatherData(cityName: string): Promise<WeatherData | nu
 
     // Step 4: Transform API response to match our WeatherData structure
     const weatherData: WeatherData = {
-      city: city.name,
-      latitude: city.latitude,
-      longitude: city.longitude,
+      city: cityName,
+      latitude: latitude,
+      longitude: longitude,
       
       // Current weather data
       current: {
@@ -97,9 +125,7 @@ export async function getWeatherData(cityName: string): Promise<WeatherData | nu
     return weatherData;
 
   } catch (error) {
-    // If API fails, log error and fallback to dummy data
-    console.error(`Error fetching weather data for ${cityName}:`, error);
-    console.log(`Falling back to dummy data for ${cityName}`);
-    return getDummyWeatherData(cityName);
+    console.error(`Error fetching weather by coordinates for ${cityName}:`, error);
+    return null;
   }
 }
