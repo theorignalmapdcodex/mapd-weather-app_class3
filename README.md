@@ -2,7 +2,7 @@
   <img src="public/city-images/weather-app_logo.png" alt="Weather App Logo" width="200"/>
 </p>
 
-# The 'Main' Weather App
+# The 'Dev' Weather App
 
 A minimalistic weather application built with Next.js 16, TypeScript, and Tailwind CSS featuring elegant design, dynamic city images, and comprehensive weather data.
 

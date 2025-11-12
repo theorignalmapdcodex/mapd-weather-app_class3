@@ -38,7 +38,7 @@ export default async function WeatherDetailPage({ params }: PageProps) {
   }
 
   // Fetch weather data
-  const weather = getWeatherData(cityName);
+  const weather = await getWeatherData(cityName);
 
   if (!weather) {
     return (
