@@ -105,7 +105,8 @@ export default function Home() {
 
   return (
     // MODIFIED: Updated background to match minimalistic gradient theme
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12">
+    // Added pb-24 for bottom navigation spacing on mobile only (md:pb-12 removes it on desktop)
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12 pb-24 md:pb-12">
       {/* NEW: Toast notification container */}
       <Toaster 
         position="top-center"
@@ -122,7 +123,7 @@ export default function Home() {
         }}
       />
       
-      <main className="w-full max-w-2xl space-y-8">
+      <main className="w-full max-w-2xl space-y-6 md:space-y-8">
         
         {/* MODIFIED: Updated header styling for minimalistic theme */}
         <div className="text-center mb-8">
@@ -138,7 +139,7 @@ export default function Home() {
           <h1 className="text-5xl md:text-6xl font-light mb-3 tracking-tight text-gray-900">
             Weather App
           </h1>
-          <p className="text-gray-500 text-lg font-light">
+          <p className="text-gray-700 text-lg font-light">
             Simple weather forecast for your city
           </p>
         </div>
@@ -146,8 +147,8 @@ export default function Home() {
         {/* MODIFIED: Search section with enhanced styling */}
         <div className="flex flex-col items-center">
           {/* NEW: Search instruction with icon */}
-          <div className="flex items-center gap-2 mb-4 text-gray-600">
-            <Search size={18} strokeWidth={1.5} className="text-gray-400" />
+          <div className="flex items-center gap-2 mb-4 text-gray-700">
+            <Search size={18} strokeWidth={1.5} className="text-gray-600" />
             <p className="text-sm font-light">Select from the top cities to view weather or Click 'View All Cities' below to search for more cities</p>
           </div>
           
@@ -169,9 +170,9 @@ export default function Home() {
         {/* Weather display */}
         {weather && !loading && <WeatherDisplay weather={weather} />}
 
-        {/* NEW: Footer */}
-        <footer className="mt-12 text-center pb-8">
-          <p className="text-gray-500 text-sm font-light">
+        {/* NEW: Footer - extra margin bottom to account for bottom nav */}
+        <footer className="mt-12 mb-4 text-center">
+          <p className="text-gray-700 text-sm font-light">
             Made with 🖤 by @theoriginalmapd
           </p>
         </footer>

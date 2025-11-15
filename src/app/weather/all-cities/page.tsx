@@ -220,37 +220,37 @@ export default function AllCitiesPage() {
     }
   };
 
-  // NEW: Render weather card component
+  // NEW: Render weather card component - Responsive padding
   const WeatherCard = ({ weather }: { weather: WeatherData }) => (
-    <div className="bg-white rounded-3xl p-8 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100">
+    <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100">
       {/* City Name and Coordinates */}
       <div className="mb-6">
         <h2 className="text-2xl font-light tracking-wide mb-1">
           {weather.city}
         </h2>
-        <p className="text-gray-400 text-sm font-light">
+        <p className="text-gray-600 text-sm font-light">
           {weather.latitude.toFixed(2)}°, {weather.longitude.toFixed(2)}°
         </p>
       </div>
 
-      {/* Current Temperature Display with Weather Icon */}
-      <div className="flex items-start justify-between mb-8">
+      {/* Current Temperature Display with Weather Icon - Responsive sizing */}
+      <div className="flex items-start justify-between mb-6 md:mb-8">
         <div>
-          <div className="text-6xl font-light mb-2">
+          <div className="text-5xl md:text-6xl font-light mb-2">
             {Math.round(weather.current.temperature)}°
           </div>
-          <div className="text-gray-500 text-sm font-light">
+          <div className="text-gray-700 text-xs md:text-sm font-light">
             Feels like {Math.round(weather.current.feelsLike)}°
           </div>
         </div>
-        <div className="text-gray-700 mt-2">
-          <WeatherIcon code={weather.current.condition.code} size={48} />
+        <div className="text-gray-700 mt-1 md:mt-2">
+          <WeatherIcon code={weather.current.condition.code} size={40} className="md:w-12 md:h-12" />
         </div>
       </div>
 
       {/* Weather Condition Description */}
       <div className="mb-6 pb-6 border-b border-gray-100">
-        <p className="text-gray-600 font-light">
+        <p className="text-gray-700 font-light">
           {weather.current.condition.description}
         </p>
       </div>
@@ -258,14 +258,14 @@ export default function AllCitiesPage() {
       {/* Additional Weather Metrics */}
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div className="flex items-center gap-2">
-          <Wind size={16} className="text-gray-400" strokeWidth={1.5} />
-          <span className="text-gray-600 font-light">
+          <Wind size={16} className="text-gray-600" strokeWidth={1.5} />
+          <span className="text-gray-800 font-light">
             {weather.current.windSpeed} mph
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Cloud size={16} className="text-gray-400" strokeWidth={1.5} />
-          <span className="text-gray-600 font-light">
+          <Cloud size={16} className="text-gray-600" strokeWidth={1.5} />
+          <span className="text-gray-800 font-light">
             {weather.current.humidity}%
           </span>
         </div>
@@ -276,16 +276,16 @@ export default function AllCitiesPage() {
         <div className="flex gap-4 justify-between">
           {weather.forecast.slice(0, 3).map((day, idx) => (
             <div key={idx} className="text-center flex-1">
-              <div className="text-xs text-gray-400 mb-2 font-light">
+              <div className="text-xs text-gray-600 mb-2 font-light">
                 {idx === 0 ? "Tomorrow" : `+${idx + 1}d`}
               </div>
               <div className="flex justify-center mb-2">
                 <WeatherIcon code={day.condition.code} size={20} />
               </div>
               <div className="text-sm font-light">
-                <span className="text-gray-800">{Math.round(day.maxTemp)}°</span>
-                <span className="text-gray-400 mx-1">/</span>
-                <span className="text-gray-500">{Math.round(day.minTemp)}°</span>
+                <span className="text-gray-900">{Math.round(day.maxTemp)}°</span>
+                <span className="text-gray-600 mx-1">/</span>
+                <span className="text-gray-700">{Math.round(day.minTemp)}°</span>
               </div>
             </div>
           ))}
@@ -295,7 +295,7 @@ export default function AllCitiesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6 md:p-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6 md:p-12 pb-24 md:pb-12">
       {/* Toast notifications container */}
       <Toaster position="top-center" reverseOrder={false} gutter={8} />
 
@@ -311,29 +311,29 @@ export default function AllCitiesPage() {
             />
           </div>
 
-          <h1 className="text-5xl md:text-6xl font-light mb-4 tracking-tight">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-light mb-4 tracking-tight">
             Weather Overview
           </h1>
-          <p className="text-gray-500 text-lg font-light mb-6">
+          <p className="text-gray-700 text-base md:text-lg font-light mb-6">
             Current conditions across all cities
           </p>
 
-          {/* NEW: City Search Bar */}
+          {/* NEW: City Search Bar - Responsive layout */}
           <form onSubmit={handleSearch} className="max-w-md mx-auto">
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <input
                 type="text"
                 value={searchCity}
                 onChange={(e) => setSearchCity(e.target.value)}
                 placeholder="Search any city worldwide..."
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent font-light text-gray-900 placeholder-gray-400"
+                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent font-light text-gray-900 placeholder-gray-400 text-sm md:text-base"
                 disabled={isSearching}
                 maxLength={50} // Limit input length
               />
               <button
                 type="submit"
                 disabled={isSearching}
-                className="px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-light"
+                className="px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-light text-sm md:text-base"
               >
                 {isSearching ? (
                   <Loader2 className="w-5 h-5 animate-spin" strokeWidth={2} />
@@ -344,7 +344,7 @@ export default function AllCitiesPage() {
               </button>
             </div>
             {/* NEW: Helper text below search bar */}
-            <p className="text-xs text-gray-400 mt-2 font-light text-center">
+            <p className="text-xs text-gray-600 mt-2 font-light text-center">
               💡 Tip: Search is case-insensitive. Try "london" or "New York"
             </p>
           </form>
@@ -396,9 +396,9 @@ export default function AllCitiesPage() {
           </Link>
         </div>
 
-        {/* Footer */}
-        <footer className="mt-12 text-center pb-8">
-          <p className="text-gray-500 text-sm font-light">
+        {/* Footer - adjusted for bottom nav */}
+        <footer className="mt-12 mb-4 text-center">
+          <p className="text-gray-700 text-sm font-light">
             Made with 🖤 by @theoriginalmapd
           </p>
         </footer>
