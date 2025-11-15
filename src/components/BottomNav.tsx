@@ -10,7 +10,7 @@ import { Home, Search, Calendar } from "lucide-react";
  * Mobile-only fixed bottom navigation bar (hidden on desktop/laptop)
  * - Home: Navigate to main page
  * - Search: Navigate to all cities search page
- * - Calendar: Navigate to forecast/calendar view (future feature)
+ * - Calendar: Navigate to world calendar with timezone support
  *
  * Responsive design:
  * - Mobile/Tablet (< 768px): Visible with full-width layout
@@ -33,7 +33,7 @@ export function BottomNav() {
     },
     {
       name: "Calendar",
-      href: "#", // Placeholder for future feature
+      href: "/calendar",
       icon: Calendar,
     },
   ];

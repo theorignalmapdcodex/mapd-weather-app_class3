@@ -225,7 +225,7 @@ export default function AllCitiesPage() {
     <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100">
       {/* City Name and Coordinates */}
       <div className="mb-6">
-        <h2 className="text-2xl font-light tracking-wide mb-1">
+        <h2 className="text-2xl font-light tracking-wide mb-1 text-gray-900">
           {weather.city}
         </h2>
         <p className="text-gray-600 text-sm font-light">
@@ -236,7 +236,7 @@ export default function AllCitiesPage() {
       {/* Current Temperature Display with Weather Icon - Responsive sizing */}
       <div className="flex items-start justify-between mb-6 md:mb-8">
         <div>
-          <div className="text-5xl md:text-6xl font-light mb-2">
+          <div className="text-5xl md:text-6xl font-light mb-2 text-gray-900">
             {Math.round(weather.current.temperature)}°
           </div>
           <div className="text-gray-700 text-xs md:text-sm font-light">
@@ -311,7 +311,7 @@ export default function AllCitiesPage() {
             />
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-light mb-4 tracking-tight">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-light mb-4 tracking-tight text-gray-900">
             Weather Overview
           </h1>
           <p className="text-gray-700 text-base md:text-lg font-light mb-6">
