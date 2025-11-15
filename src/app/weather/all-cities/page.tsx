@@ -11,6 +11,7 @@ import Link from "next/link";
 import { Cloud, Wind, Search as SearchIcon, Loader2 } from "lucide-react";
 import { WeatherIcon } from "@/components/WeatherIcon";
 import toast, { Toaster } from "react-hot-toast";
+import { DesktopNav } from "@/components/DesktopNav";
 
 /**
  * MODIFIED: AllCitiesPage
@@ -396,8 +397,13 @@ export default function AllCitiesPage() {
           </Link>
         </div>
 
+        {/* NEW: Desktop navigation - appears before footer on desktop only */}
+        <div className="mt-12">
+          <DesktopNav />
+        </div>
+
         {/* Footer - adjusted for bottom nav */}
-        <footer className="mt-12 mb-4 text-center">
+        <footer className="mt-8 mb-4 text-center">
           <p className="text-gray-700 text-sm font-light">
             Made with 🖤 by @theoriginalmapd
           </p>

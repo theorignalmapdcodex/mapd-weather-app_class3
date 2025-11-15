@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Calendar as CalendarIcon, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
+import { DesktopNav } from "@/components/DesktopNav";
 
 /**
  * Calendar Page
@@ -207,6 +208,11 @@ export default function CalendarPage() {
           >
             ← Back to Home
           </Link>
+        </div>
+
+        {/* NEW: Desktop navigation - appears before footer on desktop only */}
+        <div className="mt-12">
+          <DesktopNav />
         </div>
 
         {/* Footer */}
