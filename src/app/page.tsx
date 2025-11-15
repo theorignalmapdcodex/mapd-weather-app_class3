@@ -14,6 +14,8 @@ import { WeatherData } from "@/types/weather";
 import { Search, Loader2 } from "lucide-react";
 // NEW: Import react-hot-toast for notifications
 import toast, { Toaster } from "react-hot-toast";
+// NEW: Import DesktopNav for desktop navigation
+import { DesktopNav } from "@/components/DesktopNav";
 
 // Default city to display on load
 const DEFAULT_CITY = "Durham";
@@ -170,8 +172,13 @@ export default function Home() {
         {/* Weather display */}
         {weather && !loading && <WeatherDisplay weather={weather} />}
 
+        {/* NEW: Desktop navigation - appears before footer on desktop only */}
+        <div className="mt-12">
+          <DesktopNav />
+        </div>
+
         {/* NEW: Footer - extra margin bottom to account for bottom nav */}
-        <footer className="mt-12 mb-4 text-center">
+        <footer className="mt-8 mb-4 text-center">
           <p className="text-gray-700 text-sm font-light">
             Made with 🖤 by @theoriginalmapd
           </p>

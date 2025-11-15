@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Wind, Droplets, Cloud, Search, MapPin } from "lucide-react"; // MODIFIED: Added Search and MapPin icons
 // NEW: Import centralized WeatherIcon component for consistent icon display across pages
 import { WeatherIcon } from "@/components/WeatherIcon";
+import { DesktopNav } from "@/components/DesktopNav";
 
 /**
  * Detailed Weather Page
@@ -208,8 +209,13 @@ export default async function WeatherDetailPage({ params }: PageProps) {
           </Button>
         </div>
 
+        {/* NEW: Desktop navigation - appears before footer on desktop only */}
+        <div className="mt-12">
+          <DesktopNav />
+        </div>
+
                 {/* NEW: Footer - adjusted for bottom nav */}
-        <footer className="mt-12 mb-4 text-center">
+        <footer className="mt-8 mb-4 text-center">
           <p className="text-gray-700 text-sm font-light">
             Made with 🖤 by @theoriginalmapd
           </p>
