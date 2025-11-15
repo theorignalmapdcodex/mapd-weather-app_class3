@@ -58,7 +58,8 @@ export default async function WeatherDetailPage({ params }: PageProps) {
 
   return (
     // MODIFIED: Changed background to match All Cities gradient theme
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12">
+    // Added pb-24 for bottom navigation spacing on mobile only
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12 pb-24 md:pb-12">
       <main className="max-w-5xl mx-auto space-y-8">
         
         {/* MODIFIED: Updated header with minimalistic styling */}
@@ -68,7 +69,7 @@ export default async function WeatherDetailPage({ params }: PageProps) {
               {weather.city}
             </h1>
             {/* NEW: Added coordinates display matching All Cities style */}
-            <p className="text-gray-400 text-sm font-light">
+            <p className="text-gray-600 text-sm font-light">
               {weather.latitude.toFixed(2)}°, {weather.longitude.toFixed(2)}°
             </p>
           </div>
@@ -89,7 +90,7 @@ export default async function WeatherDetailPage({ params }: PageProps) {
                 {Math.round(weather.current.temperature)}°
               </div>
               {/* Feels like temperature */}
-              <div className="text-gray-500 text-xl font-light mb-4">
+              <div className="text-gray-700 text-xl font-light mb-4">
                 Feels like {Math.round(weather.current.feelsLike)}°
               </div>
               {/* Weather condition description */}
@@ -108,29 +109,29 @@ export default async function WeatherDetailPage({ params }: PageProps) {
             
             {/* Wind speed metric */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-400">
+              <div className="flex items-center gap-2 text-gray-600">
                 <Wind size={20} strokeWidth={1.5} />
                 <span className="text-sm font-light uppercase tracking-wide">Wind</span>
               </div>
               <div className="text-3xl font-light text-gray-900">
-                {weather.current.windSpeed} <span className="text-xl text-gray-500">mph</span>
+                {weather.current.windSpeed} <span className="text-xl text-gray-700">mph</span>
               </div>
             </div>
 
             {/* Humidity metric */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-400">
+              <div className="flex items-center gap-2 text-gray-600">
                 <Droplets size={20} strokeWidth={1.5} />
                 <span className="text-sm font-light uppercase tracking-wide">Humidity</span>
               </div>
               <div className="text-3xl font-light text-gray-900">
-                {weather.current.humidity}<span className="text-xl text-gray-500">%</span>
+                {weather.current.humidity}<span className="text-xl text-gray-700">%</span>
               </div>
             </div>
 
             {/* Condition code (for reference) */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-400">
+              <div className="flex items-center gap-2 text-gray-600">
                 <Cloud size={20} strokeWidth={1.5} />
                 <span className="text-sm font-light uppercase tracking-wide">Condition</span>
               </div>
@@ -149,12 +150,12 @@ export default async function WeatherDetailPage({ params }: PageProps) {
           {/* Forecast grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {weather.forecast.map((day, idx) => (
-              <div 
+              <div
                 key={idx}
                 className="p-6 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors"
               >
                 {/* Day label */}
-                <div className="text-sm font-light text-gray-500 mb-4 uppercase tracking-wide">
+                <div className="text-sm font-light text-gray-700 mb-4 uppercase tracking-wide">
                   {idx === 0 ? "Tomorrow" : new Date(day.date).toLocaleDateString('en-US', { weekday: 'long' })}
                 </div>
                 
@@ -173,8 +174,8 @@ export default async function WeatherDetailPage({ params }: PageProps) {
                   <span className="text-3xl font-light text-gray-900">
                     {Math.round(day.maxTemp)}°
                   </span>
-                  <span className="text-gray-400 mx-2 text-xl">/</span>
-                  <span className="text-2xl font-light text-gray-500">
+                  <span className="text-gray-600 mx-2 text-xl">/</span>
+                  <span className="text-2xl font-light text-gray-700">
                     {Math.round(day.minTemp)}°
                   </span>
                 </div>
@@ -207,9 +208,9 @@ export default async function WeatherDetailPage({ params }: PageProps) {
           </Button>
         </div>
 
-                {/* NEW: Footer */}
-        <footer className="mt-12 text-center pb-8">
-          <p className="text-gray-500 text-sm font-light">
+                {/* NEW: Footer - adjusted for bottom nav */}
+        <footer className="mt-12 mb-4 text-center">
+          <p className="text-gray-700 text-sm font-light">
             Made with 🖤 by @theoriginalmapd
           </p>
         </footer>

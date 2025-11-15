@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from '@vercel/analytics/next'; //NEW
+import { BottomNav } from "@/components/BottomNav"; //NEW: Bottom navigation bar
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +19,14 @@ export const metadata: Metadata = {
   description: "A simple weather app.",
 };
 
+// Viewport configuration - separate export as per Next.js 14+ requirement
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,6 +38,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <BottomNav /> {/* NEW: Fixed bottom navigation */}
         <Analytics /> {/* NEW */}
       </body>
     </html>

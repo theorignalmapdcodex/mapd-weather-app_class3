@@ -34,7 +34,7 @@ export function WeatherDisplay({ weather }: WeatherDisplayProps) {
           <h2 className="text-3xl font-light tracking-wide text-gray-900 mb-2">
             {weather.city}
           </h2>
-          <p className="text-gray-400 text-sm font-light">
+          <p className="text-gray-600 text-sm font-light">
             {weather.latitude.toFixed(2)}°, {weather.longitude.toFixed(2)}°
           </p>
         </div>
@@ -47,7 +47,7 @@ export function WeatherDisplay({ weather }: WeatherDisplayProps) {
               {Math.round(weather.current.temperature)}°
             </div>
             {/* Feels like temperature */}
-            <div className="text-gray-500 text-lg font-light mb-3">
+            <div className="text-gray-700 text-lg font-light mb-3">
               Feels like {Math.round(weather.current.feelsLike)}°
             </div>
             {/* Weather condition description */}
@@ -65,26 +65,26 @@ export function WeatherDisplay({ weather }: WeatherDisplayProps) {
         <div className="grid grid-cols-2 gap-6 pt-6 border-t border-gray-100">
           {/* Wind speed */}
           <div className="flex items-center gap-3">
-            <Wind size={24} className="text-gray-400" strokeWidth={1.5} />
+            <Wind size={24} className="text-gray-600" strokeWidth={1.5} />
             <div>
-              <p className="text-xs text-gray-400 font-light uppercase tracking-wide mb-1">
+              <p className="text-xs text-gray-600 font-light uppercase tracking-wide mb-1">
                 Wind
               </p>
               <p className="text-2xl font-light text-gray-900">
-                {weather.current.windSpeed} <span className="text-lg text-gray-500">mph</span>
+                {weather.current.windSpeed} <span className="text-lg text-gray-700">mph</span>
               </p>
             </div>
           </div>
 
           {/* Humidity */}
           <div className="flex items-center gap-3">
-            <Droplets size={24} className="text-gray-400" strokeWidth={1.5} />
+            <Droplets size={24} className="text-gray-600" strokeWidth={1.5} />
             <div>
-              <p className="text-xs text-gray-400 font-light uppercase tracking-wide mb-1">
+              <p className="text-xs text-gray-600 font-light uppercase tracking-wide mb-1">
                 Humidity
               </p>
               <p className="text-2xl font-light text-gray-900">
-                {weather.current.humidity}<span className="text-lg text-gray-500">%</span>
+                {weather.current.humidity}<span className="text-lg text-gray-700">%</span>
               </p>
             </div>
           </div>
