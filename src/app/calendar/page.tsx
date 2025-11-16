@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Calendar as CalendarIcon, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
 import { DesktopNav } from "@/components/DesktopNav";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { TemperatureToggle } from "@/components/TemperatureToggle";
 
 /**
  * Calendar Page
@@ -101,29 +103,35 @@ export default function CalendarPage() {
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6 md:p-12 pb-24 md:pb-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 md:p-12 pb-24 md:pb-12">
       <div className="max-w-4xl mx-auto">
+
+        {/* Toggle controls */}
+        <div className="flex justify-end gap-3 mb-6">
+          <ThemeToggle />
+          <TemperatureToggle />
+        </div>
 
         {/* Header */}
         <div className="mb-8 text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-4 bg-white rounded-2xl shadow-sm">
-              <CalendarIcon size={40} className="text-gray-900" strokeWidth={1.5} />
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
+              <CalendarIcon size={40} className="text-gray-900 dark:text-white" strokeWidth={1.5} />
             </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-light mb-2 tracking-tight text-gray-900">
+          <h1 className="text-4xl md:text-5xl font-light mb-2 tracking-tight text-gray-900 dark:text-white">
             World Calendar
           </h1>
-          <p className="text-gray-700 text-base md:text-lg font-light">
+          <p className="text-gray-700 dark:text-gray-300 text-base md:text-lg font-light">
             Current date and time across the globe
           </p>
         </div>
 
         {/* Timezone Selector */}
-        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <MapPin size={20} className="text-gray-600" strokeWidth={1.5} />
-            <h2 className="text-lg font-light text-gray-900">Select Timezone</h2>
+            <MapPin size={20} className="text-gray-600 dark:text-gray-400" strokeWidth={1.5} />
+            <h2 className="text-lg font-light text-gray-900 dark:text-white">Select Timezone</h2>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -133,39 +141,39 @@ export default function CalendarPage() {
                 onClick={() => setSelectedTimezone(tz)}
                 className={`p-3 rounded-xl border-2 transition-all duration-200 text-left ${
                   selectedTimezone.zone === tz.zone
-                    ? "border-gray-900 bg-gray-50"
-                    : "border-gray-200 hover:border-gray-400"
+                    ? "border-gray-900 dark:border-gray-100 bg-gray-50 dark:bg-gray-700"
+                    : "border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
                 }`}
               >
                 <div className="text-2xl mb-1">{tz.flag}</div>
-                <div className="text-sm font-light text-gray-900">{tz.name}</div>
+                <div className="text-sm font-light text-gray-900 dark:text-white">{tz.name}</div>
               </button>
             ))}
           </div>
         </div>
 
         {/* Current Time Display */}
-        <div className="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-gray-100 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
           <div className="flex items-center gap-2 mb-6">
-            <Clock size={20} className="text-gray-600" strokeWidth={1.5} />
-            <h2 className="text-lg font-light text-gray-900">
+            <Clock size={20} className="text-gray-600 dark:text-gray-400" strokeWidth={1.5} />
+            <h2 className="text-lg font-light text-gray-900 dark:text-white">
               Current Time in {selectedTimezone.name}
             </h2>
           </div>
 
           <div className="text-center">
-            <div className="text-5xl md:text-7xl font-light text-gray-900 mb-4 font-mono">
+            <div className="text-5xl md:text-7xl font-light text-gray-900 dark:text-white mb-4 font-mono">
               {getTimeInTimezone()}
             </div>
-            <div className="text-lg md:text-xl text-gray-700 font-light">
+            <div className="text-lg md:text-xl text-gray-700 dark:text-gray-300 font-light">
               {getDateInTimezone()}
             </div>
           </div>
         </div>
 
         {/* Calendar Grid */}
-        <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 mb-6">
-          <h2 className="text-2xl font-light text-gray-900 mb-6 text-center">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
+          <h2 className="text-2xl font-light text-gray-900 dark:text-white mb-6 text-center">
             {monthName}
           </h2>
 
@@ -174,7 +182,7 @@ export default function CalendarPage() {
             {weekDays.map((day) => (
               <div
                 key={day}
-                className="text-center text-xs md:text-sm font-light text-gray-600 uppercase tracking-wide py-2"
+                className="text-center text-xs md:text-sm font-light text-gray-600 dark:text-gray-400 uppercase tracking-wide py-2"
               >
                 {day}
               </div>
@@ -190,8 +198,8 @@ export default function CalendarPage() {
                   day === null
                     ? ""
                     : day === today
-                    ? "bg-gray-900 text-white font-normal"
-                    : "bg-gray-50 text-gray-900 hover:bg-gray-100"
+                    ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-normal"
+                    : "bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
                 }`}
               >
                 {day}
@@ -204,7 +212,7 @@ export default function CalendarPage() {
         <div className="text-center">
           <Link
             href="/"
-            className="text-gray-600 hover:text-gray-900 font-light text-sm transition-colors"
+            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-light text-sm transition-colors"
           >
             ← Back to Home
           </Link>
@@ -217,7 +225,7 @@ export default function CalendarPage() {
 
         {/* Footer */}
         <footer className="mt-8 mb-4 text-center">
-          <p className="text-gray-700 text-sm font-light">
+          <p className="text-gray-700 dark:text-gray-400 text-sm font-light">
             Made with 🖤 by @theoriginalmapd
           </p>
         </footer>
