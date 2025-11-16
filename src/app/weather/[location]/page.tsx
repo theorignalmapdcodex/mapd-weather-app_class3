@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { notFound } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { notFound, useParams } from "next/navigation";
 import { getWeatherData } from "@/lib/getWeather";
 import { CITIES } from "@/data/cities";
 import { CurrentWeatherDetail } from "@/components/CurrentWeatherDetail";
@@ -10,6 +13,10 @@ import { Wind, Droplets, Cloud, Search, MapPin } from "lucide-react"; // MODIFIE
 // NEW: Import centralized WeatherIcon component for consistent icon display across pages
 import { WeatherIcon } from "@/components/WeatherIcon";
 import { DesktopNav } from "@/components/DesktopNav";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { TemperatureToggle } from "@/components/TemperatureToggle";
+import { useTemperature } from "@/contexts/TemperatureContext";
+import type { WeatherData } from "@/types/weather";
 
 /**
  * Detailed Weather Page
@@ -19,34 +26,53 @@ import { DesktopNav } from "@/components/DesktopNav";
  * MODIFIED: Updated with minimalistic, artistic theme to match All Cities page
  */
 
-interface PageProps {
-  params: Promise<{
-    location: string;
-  }>;
-}
+export default function WeatherDetailPage() {
+  const params = useParams();
+  const { convertTemp, getUnitSymbol } = useTemperature();
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function WeatherDetailPage({ params }: PageProps) {
-  const { location } = await params;
+  const location = params.location as string;
   const cityName = decodeURIComponent(location);
 
-  // Validate city exists in our list
-  const cityExists = CITIES.some(
-    (c) => c.name.toLowerCase() === cityName.toLowerCase()
-  );
+  useEffect(() => {
+    // Validate city exists in our list
+    const cityExists = CITIES.some(
+      (c) => c.name.toLowerCase() === cityName.toLowerCase()
+    );
 
-  if (!cityExists) {
-    notFound();
+    if (!cityExists) {
+      notFound();
+      return;
+    }
+
+    // Fetch weather data
+    const loadWeather = async () => {
+      setLoading(true);
+      const data = await getWeatherData(cityName);
+      setWeather(data);
+      setLoading(false);
+    };
+
+    loadWeather();
+  }, [cityName]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4">
+        <div className="text-center space-y-4">
+          <h1 className="text-3xl font-light text-gray-900 dark:text-white">Loading...</h1>
+        </div>
+      </div>
+    );
   }
-
-  // Fetch weather data
-  const weather = await getWeatherData(cityName);
 
   if (!weather) {
     return (
       // MODIFIED: Updated error state styling to match minimalistic theme
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
-        <div className="text-center space-y-4 bg-white rounded-3xl p-12 shadow-sm">
-          <h1 className="text-3xl font-light text-gray-900">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4">
+        <div className="text-center space-y-4 bg-white dark:bg-gray-800 rounded-3xl p-12 shadow-sm">
+          <h1 className="text-3xl font-light text-gray-900 dark:text-white">
             Weather data unavailable
           </h1>
           <Button href="/" variant="default">
@@ -60,17 +86,23 @@ export default async function WeatherDetailPage({ params }: PageProps) {
   return (
     // MODIFIED: Changed background to match All Cities gradient theme
     // Added pb-24 for bottom navigation spacing on mobile only
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12 pb-24 md:pb-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 py-12 pb-24 md:pb-12">
       <main className="max-w-5xl mx-auto space-y-8">
+
+        {/* Toggle controls */}
+        <div className="flex justify-end gap-3 mb-4">
+          <ThemeToggle />
+          <TemperatureToggle />
+        </div>
         
         {/* MODIFIED: Updated header with minimalistic styling */}
         <div className="flex items-center justify-between mb-12">
           <div>
-            <h1 className="text-5xl md:text-6xl font-light tracking-tight text-gray-900 mb-2">
+            <h1 className="text-5xl md:text-6xl font-light tracking-tight text-gray-900 dark:text-white mb-2">
               {weather.city}
             </h1>
             {/* NEW: Added coordinates display matching All Cities style */}
-            <p className="text-gray-600 text-sm font-light">
+            <p className="text-gray-600 dark:text-gray-400 text-sm font-light">
               {weather.latitude.toFixed(2)}°, {weather.longitude.toFixed(2)}°
             </p>
           </div>
@@ -81,21 +113,21 @@ export default async function WeatherDetailPage({ params }: PageProps) {
         </div>
 
         {/* NEW: Current Weather Card - Minimalistic design matching All Cities page */}
-        <div className="bg-white rounded-3xl p-10 md:p-12 shadow-sm border border-gray-100">
-          
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-10 md:p-12 shadow-sm border border-gray-100 dark:border-gray-700">
+
           {/* NEW: Current temperature display with icon */}
           <div className="flex items-start justify-between mb-10">
             <div>
               {/* Large temperature display */}
-              <div className="text-8xl md:text-9xl font-light mb-3 text-gray-900">
-                {Math.round(weather.current.temperature)}°
+              <div className="text-8xl md:text-9xl font-light mb-3 text-gray-900 dark:text-white">
+                {Math.round(convertTemp(weather.current.temperature))}{getUnitSymbol()}
               </div>
               {/* Feels like temperature */}
-              <div className="text-gray-700 text-xl font-light mb-4">
-                Feels like {Math.round(weather.current.feelsLike)}°
+              <div className="text-gray-700 dark:text-gray-300 text-xl font-light mb-4">
+                Feels like {Math.round(convertTemp(weather.current.feelsLike))}{getUnitSymbol()}
               </div>
               {/* Weather condition description */}
-              <div className="text-2xl text-gray-700 font-light">
+              <div className="text-2xl text-gray-700 dark:text-gray-300 font-light">
                 {weather.current.condition.description}
               </div>
             </div>
@@ -106,37 +138,37 @@ export default async function WeatherDetailPage({ params }: PageProps) {
           </div>
 
           {/* NEW: Weather metrics grid - minimalistic style */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 pt-8 border-t border-gray-100">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 pt-8 border-t border-gray-100 dark:border-gray-700">
             
             {/* Wind speed metric */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 <Wind size={20} strokeWidth={1.5} />
                 <span className="text-sm font-light uppercase tracking-wide">Wind</span>
               </div>
-              <div className="text-3xl font-light text-gray-900">
-                {weather.current.windSpeed} <span className="text-xl text-gray-700">mph</span>
+              <div className="text-3xl font-light text-gray-900 dark:text-white">
+                {weather.current.windSpeed} <span className="text-xl text-gray-700 dark:text-gray-300">mph</span>
               </div>
             </div>
 
             {/* Humidity metric */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 <Droplets size={20} strokeWidth={1.5} />
                 <span className="text-sm font-light uppercase tracking-wide">Humidity</span>
               </div>
-              <div className="text-3xl font-light text-gray-900">
-                {weather.current.humidity}<span className="text-xl text-gray-700">%</span>
+              <div className="text-3xl font-light text-gray-900 dark:text-white">
+                {weather.current.humidity}<span className="text-xl text-gray-700 dark:text-gray-300">%</span>
               </div>
             </div>
 
             {/* Condition code (for reference) */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 <Cloud size={20} strokeWidth={1.5} />
                 <span className="text-sm font-light uppercase tracking-wide">Condition</span>
               </div>
-              <div className="text-3xl font-light text-gray-900">
+              <div className="text-3xl font-light text-gray-900 dark:text-white">
                 {weather.current.condition.code}
               </div>
             </div>
@@ -145,18 +177,18 @@ export default async function WeatherDetailPage({ params }: PageProps) {
         </div>
 
         {/* NEW: 3-Day Forecast - Minimalistic card design */}
-        <div className="bg-white rounded-3xl p-10 shadow-sm border border-gray-100">
-          <h2 className="text-3xl font-light mb-8 text-gray-900">3-Day Forecast</h2>
-          
+        <div className="bg-white dark:bg-gray-800 rounded-3xl p-10 shadow-sm border border-gray-100 dark:border-gray-700">
+          <h2 className="text-3xl font-light mb-8 text-gray-900 dark:text-white">3-Day Forecast</h2>
+
           {/* Forecast grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {weather.forecast.map((day, idx) => (
               <div
                 key={idx}
-                className="p-6 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors"
+                className="p-6 rounded-2xl bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
               >
                 {/* Day label */}
-                <div className="text-sm font-light text-gray-700 mb-4 uppercase tracking-wide">
+                <div className="text-sm font-light text-gray-700 dark:text-gray-300 mb-4 uppercase tracking-wide">
                   {idx === 0 ? "Tomorrow" : new Date(day.date).toLocaleDateString('en-US', { weekday: 'long' })}
                 </div>
                 
@@ -166,18 +198,18 @@ export default async function WeatherDetailPage({ params }: PageProps) {
                 </div>
 
                 {/* Condition description */}
-                <div className="text-center text-gray-700 font-light mb-4">
+                <div className="text-center text-gray-700 dark:text-gray-300 font-light mb-4">
                   {day.condition.description}
                 </div>
 
                 {/* Temperature range */}
                 <div className="text-center">
-                  <span className="text-3xl font-light text-gray-900">
-                    {Math.round(day.maxTemp)}°
+                  <span className="text-3xl font-light text-gray-900 dark:text-white">
+                    {Math.round(convertTemp(day.maxTemp))}{getUnitSymbol()}
                   </span>
-                  <span className="text-gray-600 mx-2 text-xl">/</span>
-                  <span className="text-2xl font-light text-gray-700">
-                    {Math.round(day.minTemp)}°
+                  <span className="text-gray-600 dark:text-gray-500 mx-2 text-xl">/</span>
+                  <span className="text-2xl font-light text-gray-700 dark:text-gray-300">
+                    {Math.round(convertTemp(day.minTemp))}{getUnitSymbol()}
                   </span>
                 </div>
               </div>
@@ -216,7 +248,7 @@ export default async function WeatherDetailPage({ params }: PageProps) {
 
                 {/* NEW: Footer - adjusted for bottom nav */}
         <footer className="mt-8 mb-4 text-center">
-          <p className="text-gray-700 text-sm font-light">
+          <p className="text-gray-700 dark:text-gray-400 text-sm font-light">
             Made with 🖤 by @theoriginalmapd
           </p>
         </footer>
@@ -224,15 +256,4 @@ export default async function WeatherDetailPage({ params }: PageProps) {
       </main>
     </div>
   );
-}
-
-// Generate metadata for SEO
-export async function generateMetadata({ params }: PageProps) {
-  const { location } = await params;
-  const cityName = decodeURIComponent(location);
-
-  return {
-    title: `${cityName} Weather - Weather App`,
-    description: `Detailed weather forecast for ${cityName}`,
-  };
 }
