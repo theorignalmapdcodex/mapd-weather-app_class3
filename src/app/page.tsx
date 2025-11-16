@@ -16,6 +16,9 @@ import { Search, Loader2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 // NEW: Import DesktopNav for desktop navigation
 import { DesktopNav } from "@/components/DesktopNav";
+// NEW: Import toggle components for theme and temperature
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { TemperatureToggle } from "@/components/TemperatureToggle";
 
 // Default city to display on load
 const DEFAULT_CITY = "Durham";
@@ -108,7 +111,8 @@ export default function Home() {
   return (
     // MODIFIED: Updated background to match minimalistic gradient theme
     // Added pb-24 for bottom navigation spacing on mobile only (md:pb-12 removes it on desktop)
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12 pb-24 md:pb-12">
+    // NEW: Added dark mode classes
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 py-12 pb-24 md:pb-12">
       {/* NEW: Toast notification container */}
       <Toaster 
         position="top-center"
@@ -126,7 +130,13 @@ export default function Home() {
       />
       
       <main className="w-full max-w-2xl space-y-6 md:space-y-8">
-        
+
+        {/* NEW: Toggle controls - positioned at top right */}
+        <div className="flex justify-end gap-3 mb-4">
+          <ThemeToggle />
+          <TemperatureToggle />
+        </div>
+
         {/* MODIFIED: Updated header styling for minimalistic theme */}
         <div className="text-center mb-8">
           {/* NEW: Logo image above title */}
@@ -138,10 +148,10 @@ export default function Home() {
             />
           </div>
           
-          <h1 className="text-5xl md:text-6xl font-light mb-3 tracking-tight text-gray-900">
+          <h1 className="text-5xl md:text-6xl font-light mb-3 tracking-tight text-gray-900 dark:text-white">
             Weather App
           </h1>
-          <p className="text-gray-700 text-lg font-light">
+          <p className="text-gray-700 dark:text-gray-300 text-lg font-light">
             Simple weather forecast for your city
           </p>
         </div>
@@ -149,8 +159,8 @@ export default function Home() {
         {/* MODIFIED: Search section with enhanced styling */}
         <div className="flex flex-col items-center">
           {/* NEW: Search instruction with icon */}
-          <div className="flex items-center gap-2 mb-4 text-gray-700">
-            <Search size={18} strokeWidth={1.5} className="text-gray-600" />
+          <div className="flex items-center gap-2 mb-4 text-gray-700 dark:text-gray-300">
+            <Search size={18} strokeWidth={1.5} className="text-gray-600 dark:text-gray-400" />
             <p className="text-sm font-light">Select from the top cities to view weather or Click 'View All Cities' below to search for more cities</p>
           </div>
           
@@ -161,8 +171,8 @@ export default function Home() {
         {/* MODIFIED: Enhanced loading state with spinner */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="w-12 h-12 text-gray-400 animate-spin mb-4" strokeWidth={1.5} />
-            <p className="text-gray-500 font-light">Loading weather data...</p>
+            <Loader2 className="w-12 h-12 text-gray-400 dark:text-gray-500 animate-spin mb-4" strokeWidth={1.5} />
+            <p className="text-gray-500 dark:text-gray-400 font-light">Loading weather data...</p>
           </div>
         )}
         
@@ -179,7 +189,7 @@ export default function Home() {
 
         {/* NEW: Footer - extra margin bottom to account for bottom nav */}
         <footer className="mt-8 mb-4 text-center">
-          <p className="text-gray-700 text-sm font-light">
+          <p className="text-gray-700 dark:text-gray-400 text-sm font-light">
             Made with 🖤 by @theoriginalmapd
           </p>
         </footer>
