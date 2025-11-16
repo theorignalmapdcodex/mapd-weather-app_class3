@@ -16,16 +16,16 @@ import { DesktopNav } from "@/components/DesktopNav";
  * - Responsive design for mobile and desktop
  */
 
-// Major world timezones
+// Major world timezones with unique city icons
 const TIMEZONES = [
-  { name: "New York", zone: "America/New_York", flag: "🗽" },
-  { name: "London", zone: "Europe/London", flag: "🇬🇧" },
-  { name: "Paris", zone: "Europe/Paris", flag: "🇫🇷" },
-  { name: "Tokyo", zone: "Asia/Tokyo", flag: "🇯🇵" },
-  { name: "Sydney", zone: "Australia/Sydney", flag: "🇦🇺" },
-  { name: "Dubai", zone: "Asia/Dubai", flag: "🇦🇪" },
-  { name: "Los Angeles", zone: "America/Los_Angeles", flag: "🌴" },
-  { name: "Hong Kong", zone: "Asia/Hong_Kong", flag: "🇭🇰" },
+  { name: "New York", zone: "America/New_York", flag: "🗽" },      // Statue of Liberty
+  { name: "London", zone: "Europe/London", flag: "🏰" },           // Castle/Big Ben
+  { name: "Paris", zone: "Europe/Paris", flag: "🗼" },             // Eiffel Tower
+  { name: "Tokyo", zone: "Asia/Tokyo", flag: "🗾" },               // Japan map
+  { name: "Sydney", zone: "Australia/Sydney", flag: "🦘" },        // Kangaroo
+  { name: "Dubai", zone: "Asia/Dubai", flag: "🕌" },               // Mosque/Architecture
+  { name: "Los Angeles", zone: "America/Los_Angeles", flag: "🎬" }, // Hollywood
+  { name: "Hong Kong", zone: "Asia/Hong_Kong", flag: "🏙️" },       // Cityscape
 ];
 
 export default function CalendarPage() {

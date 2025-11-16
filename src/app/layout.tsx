@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from '@vercel/analytics/next'; //NEW
 import { BottomNav } from "@/components/BottomNav"; //NEW: Bottom navigation bar
+import { ThemeProvider } from "@/contexts/ThemeContext"; //NEW: Theme context for dark/light mode
+import { TemperatureProvider } from "@/contexts/TemperatureContext"; //NEW: Temperature unit context
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,9 +39,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
-        <BottomNav /> {/* NEW: Fixed bottom navigation */}
-        <Analytics /> {/* NEW */}
+        <ThemeProvider>
+          <TemperatureProvider>
+            {children}
+            <BottomNav /> {/* NEW: Fixed bottom navigation */}
+            <Analytics /> {/* NEW */}
+          </TemperatureProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

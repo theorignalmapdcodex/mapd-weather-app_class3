@@ -39,7 +39,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-lg z-50 safe-area-inset-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 shadow-lg z-50 safe-area-inset-bottom">
       {/*
         Mobile-only navigation bar (hidden on desktop with md:hidden)
         - Shows only on screens smaller than 768px (mobile/tablet)
@@ -57,8 +57,8 @@ export function BottomNav() {
                 href={item.href}
                 className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-[70px] ${
                   isActive
-                    ? "text-gray-900 bg-gray-100"
-                    : "text-gray-500 active:bg-gray-100"
+                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700"
+                    : "text-gray-500 dark:text-gray-400 active:bg-gray-100 dark:active:bg-gray-700"
                 }`}
               >
                 <Icon
@@ -76,7 +76,7 @@ export function BottomNav() {
       </div>
 
       {/* Safe area for mobile devices with notches/home indicators */}
-      <div className="h-safe-area-inset-bottom bg-white/95 backdrop-blur-md" />
+      <div className="h-safe-area-inset-bottom bg-white/95 dark:bg-gray-800/95 backdrop-blur-md" />
     </nav>
   );
 }

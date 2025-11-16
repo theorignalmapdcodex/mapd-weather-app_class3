@@ -44,7 +44,7 @@ export function DesktopNav() {
 
   return (
     <nav className="hidden md:block">
-      <div className="bg-gray-900 rounded-2xl px-8 py-6 shadow-lg">
+      <div className="bg-gray-900 dark:bg-gray-950 rounded-2xl px-8 py-6 shadow-lg">
         <div className="flex items-center justify-center gap-8">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
