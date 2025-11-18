@@ -41,11 +41,17 @@ export function CityPictureCard({ cityName, className = "" }: CityPictureCardPro
       />
       
       {/* Gradient overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-      
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
       {/* City name overlay at bottom */}
       <div className="absolute bottom-0 left-0 right-0 p-6">
-        <h3 className="text-3xl md:text-4xl font-light text-white tracking-wide drop-shadow-lg">
+        <h3
+          className="text-3xl md:text-4xl font-light tracking-wide drop-shadow-2xl"
+          style={{
+            color: '#ffffff',
+            textShadow: '2px 2px 8px rgba(0,0,0,0.9)'
+          }}
+        >
           {cityName}
         </h3>
       </div>

@@ -1,41 +1,64 @@
 "use client";
 
 import { useTemperature } from "@/contexts/TemperatureContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useState, useEffect } from "react";
 
 export function TemperatureToggle() {
   const { unit, toggleUnit } = useTemperature();
+  const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // HARDCODED inline styles
+  const buttonStyle: React.CSSProperties = theme === "dark"
+    ? {
+        backgroundColor: "#ffffff",
+        color: "#000000",
+        borderWidth: "2px",
+        borderStyle: "solid",
+        borderColor: "#d1d5db",
+      }
+    : {
+        backgroundColor: "#000000",
+        color: "#ffffff",
+        borderWidth: "2px",
+        borderStyle: "solid",
+        borderColor: "#1f2937",
+      };
+
   // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
     return (
-      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm w-[90px] h-[42px]" />
+      <div
+        className="flex items-center gap-2 px-4 py-2 rounded-xl shadow-lg w-[90px] h-[42px]"
+        style={buttonStyle}
+      />
     );
   }
 
   return (
     <button
       onClick={toggleUnit}
-      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 shadow-sm"
+      className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl"
+      style={buttonStyle}
       aria-label="Toggle temperature unit"
     >
       <div className="flex items-center gap-1">
         <span
           className={`text-sm font-light transition-colors ${
-            unit === "F" ? "text-gray-900 dark:text-white font-medium" : "text-gray-400 dark:text-gray-500"
+            unit === "F" ? "font-medium" : "opacity-50"
           }`}
         >
           °F
         </span>
-        <span className="text-gray-400 dark:text-gray-600">/</span>
+        <span className="opacity-50">/</span>
         <span
           className={`text-sm font-light transition-colors ${
-            unit === "C" ? "text-gray-900 dark:text-white font-medium" : "text-gray-400 dark:text-gray-500"
+            unit === "C" ? "font-medium" : "opacity-50"
           }`}
         >
           °C

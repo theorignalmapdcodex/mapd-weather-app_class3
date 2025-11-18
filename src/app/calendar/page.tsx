@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar as CalendarIcon, Clock, MapPin } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, MapPin, Star } from "lucide-react";
 import Link from "next/link";
 import { DesktopNav } from "@/components/DesktopNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -45,10 +45,14 @@ export default function CalendarPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Get calendar data for current month
+  // Get calendar data for current month in selected timezone
   const getCalendarDays = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+    if (!mounted) return [];
+
+    // Get the date in the selected timezone
+    const dateInTimezone = new Date(currentDate.toLocaleString("en-US", { timeZone: selectedTimezone.zone }));
+    const year = dateInTimezone.getFullYear();
+    const month = dateInTimezone.getMonth();
 
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
@@ -97,8 +101,23 @@ export default function CalendarPage() {
     });
   };
 
-  const monthName = currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  const today = currentDate.getDate();
+  // Get current date in selected timezone
+  const getToday = () => {
+    if (!mounted) return null;
+
+    const dateInTimezone = new Date(currentDate.toLocaleString("en-US", { timeZone: selectedTimezone.zone }));
+    return dateInTimezone.getDate();
+  };
+
+  // Get month name in selected timezone
+  const monthName = mounted
+    ? currentDate.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+        timeZone: selectedTimezone.zone
+      })
+    : "";
+  const today = getToday();
   const calendarDays = getCalendarDays();
   const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -141,8 +160,8 @@ export default function CalendarPage() {
                 onClick={() => setSelectedTimezone(tz)}
                 className={`p-3 rounded-xl border-2 transition-all duration-200 text-left ${
                   selectedTimezone.zone === tz.zone
-                    ? "border-gray-900 dark:border-gray-100 bg-gray-50 dark:bg-gray-700"
-                    : "border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
+                    ? "border-gray-900 dark:border-gray-100 bg-gray-50 dark:bg-gray-700 shadow-lg"
+                    : "border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 shadow-md hover:shadow-lg"
                 }`}
               >
                 <div className="text-2xl mb-1">{tz.flag}</div>
@@ -194,14 +213,22 @@ export default function CalendarPage() {
             {calendarDays.map((day, index) => (
               <div
                 key={index}
-                className={`aspect-square flex items-center justify-center rounded-xl text-sm md:text-base font-light transition-colors ${
+                className={`aspect-square flex flex-col items-center justify-center rounded-xl text-sm md:text-base font-light transition-colors ${
                   day === null
                     ? ""
                     : day === today
-                    ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-normal"
+                    ? "bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border-2 border-gray-900 dark:border-white shadow-lg"
                     : "bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
                 }`}
               >
+                {day === today && (
+                  <Star
+                    size={12}
+                    className="text-gray-900 dark:text-white mb-0.5"
+                    strokeWidth={2}
+                    fill="currentColor"
+                  />
+                )}
                 {day}
               </div>
             ))}

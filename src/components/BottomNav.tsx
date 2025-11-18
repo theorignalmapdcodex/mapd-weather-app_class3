@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/contexts/ThemeContext";
 import { Home, Search, Calendar } from "lucide-react";
 
 /**
@@ -19,6 +20,7 @@ import { Home, Search, Calendar } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { theme } = useTheme();
 
   const navItems = [
     {
@@ -38,8 +40,44 @@ export function BottomNav() {
     },
   ];
 
+  // HARDCODED nav bar background style
+  const navBarStyle: React.CSSProperties = theme === "dark"
+    ? {
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        borderTopWidth: "1px",
+        borderTopStyle: "solid",
+        borderTopColor: "#e5e7eb",
+      }
+    : {
+        backgroundColor: "rgba(0, 0, 0, 0.95)",
+        borderTopWidth: "1px",
+        borderTopStyle: "solid",
+        borderTopColor: "#1f2937",
+      };
+
+  // HARDCODED icon/text colors
+  const getItemStyle = (isActive: boolean): React.CSSProperties => {
+    if (theme === "dark") {
+      return {
+        color: "#000000",
+        backgroundColor: isActive ? "#f3f4f6" : "transparent",
+        borderWidth: isActive ? "1px" : "1px",
+        borderStyle: "solid",
+        borderColor: isActive ? "#d1d5db" : "transparent",
+      };
+    } else {
+      return {
+        color: isActive ? "#ffffff" : "#d1d5db",
+        backgroundColor: isActive ? "#374151" : "transparent",
+        borderWidth: isActive ? "1px" : "1px",
+        borderStyle: "solid",
+        borderColor: isActive ? "#4b5563" : "transparent",
+      };
+    }
+  };
+
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 shadow-lg z-50 safe-area-inset-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 backdrop-blur-md shadow-lg z-50 safe-area-inset-bottom" style={navBarStyle}>
       {/*
         Mobile-only navigation bar (hidden on desktop with md:hidden)
         - Shows only on screens smaller than 768px (mobile/tablet)
@@ -55,11 +93,8 @@ export function BottomNav() {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-[70px] ${
-                  isActive
-                    ? "text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700"
-                    : "text-gray-500 dark:text-gray-400 active:bg-gray-100 dark:active:bg-gray-700"
-                }`}
+                className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-[70px] shadow-sm"
+                style={getItemStyle(isActive)}
               >
                 <Icon
                   size={24}
@@ -76,7 +111,7 @@ export function BottomNav() {
       </div>
 
       {/* Safe area for mobile devices with notches/home indicators */}
-      <div className="h-safe-area-inset-bottom bg-white/95 dark:bg-gray-800/95 backdrop-blur-md" />
+      <div className="h-safe-area-inset-bottom backdrop-blur-md" style={navBarStyle} />
     </nav>
   );
 }

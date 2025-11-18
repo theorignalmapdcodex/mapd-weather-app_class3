@@ -21,30 +21,38 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const savedTheme = localStorage.getItem("theme") as Theme | null;
     if (savedTheme) {
       setTheme(savedTheme);
-    } else {
-      // Check system preference
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setTheme(prefersDark ? "dark" : "light");
     }
+    // Default is light - don't check system preference
   }, []);
 
   // Update HTML class when theme changes (immediately, not waiting for mount)
   useEffect(() => {
     const root = document.documentElement;
+    console.log("Theme changed to:", theme);
+    console.log("HTML element classes before:", root.className);
+
     if (theme === "dark") {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
     }
 
+    console.log("HTML element classes after:", root.className);
+
     // Only save to localStorage after mounting to avoid SSR issues
     if (mounted) {
       localStorage.setItem("theme", theme);
+      console.log("Saved theme to localStorage:", theme);
     }
   }, [theme, mounted]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+    console.log("Toggle theme clicked!");
+    setTheme((prev) => {
+      const newTheme = prev === "light" ? "dark" : "light";
+      console.log("Changing theme from", prev, "to", newTheme);
+      return newTheme;
+    });
   };
 
   // Always provide the context, even before mounting
