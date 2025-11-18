@@ -13,51 +13,57 @@ interface WeatherIconProps {
   className?: string; // NEW: Added className prop for additional styling
 }
 
-// MODIFIED: Updated to use lucide-react icons with thin stroke weights for minimalistic aesthetic
+// MODIFIED: Updated to use lucide-react icons with thin stroke weights for minimalistic aesthetic and colorful icons
 export function WeatherIcon({ code, size = 32, className = "" }: WeatherIconProps) {
-  // Common props for all icons - thin stroke for minimalistic look
-  const iconProps = {
+  // Base props for all icons
+  const baseProps = {
     size,
     strokeWidth: 1.5, // Thin strokes for elegant, minimal design
-    className: className || "text-gray-700", // Default gray, can be overridden
   };
 
   // Helper function to determine which icon to render based on weather code
   const getIcon = (code: number) => {
-    // Clear sky (code 0)
-    if (code === 0) return <Sun {...iconProps} className={className || "text-amber-500"} />;
-    
-    // Mainly clear (code 1)
-    if (code === 1) return <Sun {...iconProps} className={className || "text-amber-400"} />;
-    
-    // Partly cloudy (code 2)
-    if (code === 2) return <Cloud {...iconProps} className={className || "text-gray-500"} />;
-    
-    // Overcast (code 3)
-    if (code === 3) return <Cloud {...iconProps} className={className || "text-gray-600"} />;
+    // Merge className with default color classes - className first so colors can override
+    const mergeClasses = (defaultColor: string) => {
+      // Remove any text-color classes from className to prevent conflicts
+      const filteredClassName = className.replace(/text-\w+-\d+/g, '').trim();
+      return `${defaultColor} ${filteredClassName}`;
+    };
 
-    // Fog (codes 45, 48)
-    if (code === 45 || code === 48) return <CloudFog {...iconProps} className={className || "text-gray-400"} />;
+    // Clear sky (code 0) - Bright yellow/amber for sunny
+    if (code === 0) return <Sun {...baseProps} className={mergeClasses("text-yellow-400")} />;
 
-    // Drizzle (codes 51-55)
-    if (code >= 51 && code <= 55) return <CloudDrizzle {...iconProps} className={className || "text-blue-400"} />;
+    // Mainly clear (code 1) - Lighter yellow for mostly sunny
+    if (code === 1) return <Sun {...baseProps} className={mergeClasses("text-yellow-300")} />;
 
-    // Rain (codes 61-65)
-    if (code >= 61 && code <= 65) return <CloudRain {...iconProps} className={className || "text-blue-500"} />;
-    
-    // Rain showers (codes 80-82)
-    if (code >= 80 && code <= 82) return <CloudRain {...iconProps} className={className || "text-blue-600"} />;
+    // Partly cloudy (code 2) - Light gray for clouds
+    if (code === 2) return <Cloud {...baseProps} className={mergeClasses("text-gray-400")} />;
 
-    // Snow (codes 71-77, 85-86)
+    // Overcast (code 3) - Darker gray for heavy clouds
+    if (code === 3) return <Cloud {...baseProps} className={mergeClasses("text-gray-500")} />;
+
+    // Fog (codes 45, 48) - Lighter gray for fog
+    if (code === 45 || code === 48) return <CloudFog {...baseProps} className={mergeClasses("text-gray-300")} />;
+
+    // Drizzle (codes 51-55) - Light blue for light rain
+    if (code >= 51 && code <= 55) return <CloudDrizzle {...baseProps} className={mergeClasses("text-blue-400")} />;
+
+    // Rain (codes 61-65) - Blue for rain
+    if (code >= 61 && code <= 65) return <CloudRain {...baseProps} className={mergeClasses("text-blue-500")} />;
+
+    // Rain showers (codes 80-82) - Darker blue for heavy rain
+    if (code >= 80 && code <= 82) return <CloudRain {...baseProps} className={mergeClasses("text-blue-600")} />;
+
+    // Snow (codes 71-77, 85-86) - Light blue/cyan for snow
     if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
-      return <CloudSnow {...iconProps} className={className || "text-blue-300"} />;
+      return <CloudSnow {...baseProps} className={mergeClasses("text-cyan-300")} />;
     }
 
-    // Thunderstorm (codes 95-99)
-    if (code >= 95 && code <= 99) return <CloudLightning {...iconProps} className={className || "text-purple-500"} />;
+    // Thunderstorm (codes 95-99) - Purple for storms
+    if (code >= 95 && code <= 99) return <CloudLightning {...baseProps} className={mergeClasses("text-purple-500")} />;
 
     // Default fallback - generic cloud
-    return <Cloud {...iconProps} />;
+    return <Cloud {...baseProps} className={mergeClasses("text-gray-400")} />;
   };
 
   return getIcon(code);

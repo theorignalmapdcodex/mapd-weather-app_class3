@@ -228,7 +228,7 @@ export default function AllCitiesPage() {
 
   // NEW: Render weather card component - Responsive padding
   const WeatherCard = ({ weather }: { weather: WeatherData }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-gray-200 dark:border-gray-600">
       {/* City Name and Coordinates */}
       <div className="mb-6">
         <h2 className="text-2xl font-light tracking-wide mb-1 text-gray-900 dark:text-white">
@@ -314,13 +314,15 @@ export default function AllCitiesPage() {
 
         {/* Page Header Section */}
         <div className="mb-12 text-center">
-          {/* Logo */}
+          {/* Logo - clickable to return home */}
           <div className="flex justify-center mb-6">
-            <img 
-              src="/city-images/weather-app_logo.png" 
-              alt="Weather App Logo" 
-              className="w-20 h-20 md:w-24 md:h-24"
-            />
+            <Link href="/" className="transition-transform hover:scale-105 duration-200">
+              <img
+                src="/city-images/weather-app_logo.png"
+                alt="Weather App Logo"
+                className="w-20 h-20 md:w-24 md:h-24 cursor-pointer"
+              />
+            </Link>
           </div>
 
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-light mb-4 tracking-tight text-gray-900 dark:text-white">
@@ -345,7 +347,7 @@ export default function AllCitiesPage() {
               <button
                 type="submit"
                 disabled={isSearching}
-                className="px-6 py-3 bg-gray-900 dark:bg-gray-700 text-white rounded-xl hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-light text-sm md:text-base"
+                className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-gray-800 dark:hover:bg-gray-100 border-2 border-gray-800 dark:border-gray-300 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-light text-sm md:text-base"
               >
                 {isSearching ? (
                   <Loader2 className="w-5 h-5 animate-spin" strokeWidth={2} />

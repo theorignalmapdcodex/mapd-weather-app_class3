@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { LocationSearch } from "@/components/LocationSearch";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorMessage } from "@/components/ErrorMessage";
@@ -139,15 +140,17 @@ export default function Home() {
 
         {/* MODIFIED: Updated header styling for minimalistic theme */}
         <div className="text-center mb-8">
-          {/* NEW: Logo image above title */}
+          {/* NEW: Logo image above title - clickable to return home */}
           <div className="flex justify-center mb-6">
-            <img 
-              src="/city-images/weather-app_logo.png" 
-              alt="Weather App Logo" 
-              className="w-20 h-20 md:w-24 md:h-24"
-            />
+            <Link href="/" className="transition-transform hover:scale-105 duration-200">
+              <img
+                src="/city-images/weather-app_logo.png"
+                alt="Weather App Logo"
+                className="w-20 h-20 md:w-24 md:h-24 cursor-pointer"
+              />
+            </Link>
           </div>
-          
+
           <h1 className="text-5xl md:text-6xl font-light mb-3 tracking-tight text-gray-900 dark:text-white">
             Weather App
           </h1>
