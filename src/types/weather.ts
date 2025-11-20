@@ -29,6 +29,7 @@ export interface WeatherData {
   city: string;
   latitude: number;
   longitude: number;
+  timezone: string; // IANA timezone identifier (e.g., "America/New_York")
   current: CurrentWeather;
   forecast: DailyForecast[];
 }

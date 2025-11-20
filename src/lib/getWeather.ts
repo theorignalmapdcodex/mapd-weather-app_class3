@@ -96,7 +96,8 @@ export async function getWeatherByCoordinates(
       city: cityName,
       latitude: latitude,
       longitude: longitude,
-      
+      timezone: data.timezone, // IANA timezone identifier from API
+
       // Current weather data
       current: {
         temperature: Math.round(data.current.temperature_2m), // Round to whole number

@@ -13,6 +13,7 @@ export const DUMMY_WEATHER_DATA: Record<string, WeatherData> = {
     city: "Durham",
     latitude: 35.9940,
     longitude: -78.8986,
+    timezone: "America/New_York",
     current: {
       temperature: 64,
       feelsLike: 61,
@@ -57,6 +58,7 @@ export const DUMMY_WEATHER_DATA: Record<string, WeatherData> = {
     city: "New York",
     latitude: 40.7128,
     longitude: -74.0060,
+    timezone: "America/New_York",
     current: {
       temperature: 59,
       feelsLike: 55,
@@ -101,6 +103,7 @@ export const DUMMY_WEATHER_DATA: Record<string, WeatherData> = {
     city: "Tokyo",
     latitude: 35.6762,
     longitude: 139.6503,
+    timezone: "Asia/Tokyo",
     current: {
       temperature: 72,
       feelsLike: 70,
@@ -148,6 +151,7 @@ export const DUMMY_WEATHER_DATA: Record<string, WeatherData> = {
     city: "Accra",
     latitude: 5.6037,
     longitude: -0.1870,
+    timezone: "Africa/Accra",
     current: {
       temperature: 86, // Hot tropical temperature
       feelsLike: 91, // Higher feels-like due to humidity
@@ -195,6 +199,7 @@ export const DUMMY_WEATHER_DATA: Record<string, WeatherData> = {
     city: "Lausanne",
     latitude: 46.5197,
     longitude: 6.6323,
+    timezone: "Europe/Zurich",
     current: {
       temperature: 52, // Cool temperate temperature
       feelsLike: 48, // Feels cooler due to wind/elevation
@@ -242,6 +247,7 @@ export const DUMMY_WEATHER_DATA: Record<string, WeatherData> = {
     city: "Santorini",
     latitude: 36.3932,
     longitude: 25.4615,
+    timezone: "Europe/Athens",
     current: {
       temperature: 68, // Pleasant Mediterranean temperature
       feelsLike: 66, // Comfortable feel
