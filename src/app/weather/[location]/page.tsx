@@ -9,7 +9,7 @@ import { CurrentWeatherDetail } from "@/components/CurrentWeatherDetail";
 import { ForecastCard } from "@/components/ForecastCard";
 import { Button } from "@/components/ui/Button";
 // NEW: Import icons for minimalistic weather display
-import { Wind, Droplets, Cloud, Search, MapPin } from "lucide-react"; // MODIFIED: Added Search and MapPin icons
+import { Wind, Droplets, Cloud, Search, MapPin, Clock } from "lucide-react"; // MODIFIED: Added Search, MapPin and Clock icons
 // NEW: Import centralized WeatherIcon component for consistent icon display across pages
 import { WeatherIcon } from "@/components/WeatherIcon";
 import { DesktopNav } from "@/components/DesktopNav";
@@ -83,6 +83,14 @@ export default function WeatherDetailPage() {
     );
   }
 
+  // Get current time in the city's timezone
+  const currentTime = new Date().toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: weather.timezone // Use the city's timezone from API
+  });
+
   return (
     // MODIFIED: Changed background to match All Cities gradient theme
     // Added pb-24 for bottom navigation spacing on mobile only
@@ -94,7 +102,7 @@ export default function WeatherDetailPage() {
           <ThemeToggle />
           <TemperatureToggle />
         </div>
-        
+
         {/* MODIFIED: Updated header with minimalistic styling */}
         <div className="flex items-center justify-between mb-12">
           <div>
@@ -105,6 +113,13 @@ export default function WeatherDetailPage() {
             <p className="text-gray-600 dark:text-gray-400 text-sm font-light">
               {weather.latitude.toFixed(2)}°, {weather.longitude.toFixed(2)}°
             </p>
+            {/* Current Time */}
+            <div className="flex items-center gap-1.5 mt-2">
+              <Clock size={16} className="text-gray-600 dark:text-gray-400" strokeWidth={1.5} />
+              <span className="text-gray-600 dark:text-gray-400 text-sm font-light">
+                {currentTime}
+              </span>
+            </div>
           </div>
           {/* MODIFIED: Updated back button styling */}
           <Button href="/" variant="ghost" className="font-light">

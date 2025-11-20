@@ -8,13 +8,14 @@ import { getWeatherData, getWeatherByCoordinates } from "@/lib/getWeather";
 import { geocodeCity } from "@/lib/geocode";
 import { WeatherData } from "@/types/weather";
 import Link from "next/link";
-import { Cloud, Wind, Search as SearchIcon, Loader2 } from "lucide-react";
+import { Cloud, Wind, Search as SearchIcon, Loader2, Clock } from "lucide-react";
 import { WeatherIcon } from "@/components/WeatherIcon";
 import toast, { Toaster } from "react-hot-toast";
 import { DesktopNav } from "@/components/DesktopNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TemperatureToggle } from "@/components/TemperatureToggle";
 import { useTemperature } from "@/contexts/TemperatureContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 /**
  * MODIFIED: AllCitiesPage
@@ -27,6 +28,7 @@ import { useTemperature } from "@/contexts/TemperatureContext";
 
 export default function AllCitiesPage() {
   const { convertTemp, getUnitSymbol } = useTemperature();
+  const { theme } = useTheme();
 
   // State for default cities weather
   const [citiesWithWeather, setCitiesWithWeather] = useState<Array<{
@@ -227,17 +229,33 @@ export default function AllCitiesPage() {
   };
 
   // NEW: Render weather card component - Responsive padding
-  const WeatherCard = ({ weather }: { weather: WeatherData }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-gray-200 dark:border-gray-600">
-      {/* City Name and Coordinates */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-light tracking-wide mb-1 text-gray-900 dark:text-white">
-          {weather.city}
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 text-sm font-light">
-          {weather.latitude.toFixed(2)}°, {weather.longitude.toFixed(2)}°
-        </p>
-      </div>
+  const WeatherCard = ({ weather }: { weather: WeatherData }) => {
+    // Get current time in the city's timezone
+    const currentTime = new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: weather.timezone // Use the city's timezone from API
+    });
+
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-gray-200 dark:border-gray-600">
+        {/* City Name and Coordinates */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-light tracking-wide mb-1 text-gray-900 dark:text-white">
+            {weather.city}
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 text-sm font-light">
+            {weather.latitude.toFixed(2)}°, {weather.longitude.toFixed(2)}°
+          </p>
+          {/* Current Time */}
+          <div className="flex items-center gap-1.5 mt-2">
+            <Clock size={14} className="text-gray-600 dark:text-gray-400" strokeWidth={1.5} />
+            <span className="text-gray-600 dark:text-gray-400 text-xs font-light">
+              {currentTime}
+            </span>
+          </div>
+        </div>
 
       {/* Current Temperature Display with Weather Icon - Responsive sizing */}
       <div className="flex items-start justify-between mb-6 md:mb-8">
@@ -298,7 +316,8 @@ export default function AllCitiesPage() {
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 md:p-12 pb-24 md:pb-12">
@@ -347,7 +366,24 @@ export default function AllCitiesPage() {
               <button
                 type="submit"
                 disabled={isSearching}
-                className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl hover:bg-gray-800 dark:hover:bg-gray-100 border-2 border-gray-800 dark:border-gray-300 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-light text-sm md:text-base"
+                className="px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-light text-sm md:text-base"
+                style={
+                  theme === "dark"
+                    ? {
+                        backgroundColor: "#ffffff",
+                        color: "#000000",
+                        borderWidth: "2px",
+                        borderStyle: "solid",
+                        borderColor: "#d1d5db",
+                      }
+                    : {
+                        backgroundColor: "#000000",
+                        color: "#ffffff",
+                        borderWidth: "2px",
+                        borderStyle: "solid",
+                        borderColor: "#1f2937",
+                      }
+                }
               >
                 {isSearching ? (
                   <Loader2 className="w-5 h-5 animate-spin" strokeWidth={2} />

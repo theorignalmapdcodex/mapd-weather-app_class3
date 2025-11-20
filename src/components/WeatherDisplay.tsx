@@ -9,7 +9,7 @@ import { CityPictureCard } from "./CityPictureCard";
 // NEW: Import WeatherIcon for consistent weather display
 import { WeatherIcon } from "./WeatherIcon";
 // NEW: Import icons for buttons and weather metrics
-import { Eye, MapPin, Wind, Droplets } from "lucide-react";
+import { Eye, MapPin, Wind, Droplets, Clock } from "lucide-react";
 // NEW: Import temperature context for unit conversion
 import { useTemperature } from "@/contexts/TemperatureContext";
 
@@ -26,15 +26,23 @@ interface WeatherDisplayProps {
 export function WeatherDisplay({ weather }: WeatherDisplayProps) {
   const { convertTemp, getUnitSymbol } = useTemperature();
 
+  // Get current time in the city's timezone
+  const currentTime = new Date().toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: weather.timezone // Use the city's timezone from API
+  });
+
   return (
     <div className="flex flex-col items-center space-y-6 w-full">
-      
+
       {/* NEW: City Picture Card - Visual representation of the city */}
       <CityPictureCard cityName={weather.city} className="mb-4" />
 
       {/* NEW: Main weather card with minimalistic design */}
       <div className="w-full bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-gray-700">
-        
+
         {/* NEW: City name with coordinates */}
         <div className="mb-6">
           <h2 className="text-3xl font-light tracking-wide text-gray-900 dark:text-white mb-2">
@@ -43,6 +51,13 @@ export function WeatherDisplay({ weather }: WeatherDisplayProps) {
           <p className="text-gray-600 dark:text-gray-400 text-sm font-light">
             {weather.latitude.toFixed(2)}°, {weather.longitude.toFixed(2)}°
           </p>
+          {/* Current Time */}
+          <div className="flex items-center gap-1.5 mt-2">
+            <Clock size={16} className="text-gray-600 dark:text-gray-400" strokeWidth={1.5} />
+            <span className="text-gray-600 dark:text-gray-400 text-sm font-light">
+              {currentTime}
+            </span>
+          </div>
         </div>
 
         {/* NEW: Current temperature and weather icon */}
