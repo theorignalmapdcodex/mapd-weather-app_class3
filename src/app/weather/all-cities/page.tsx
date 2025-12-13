@@ -8,7 +8,7 @@ import { getWeatherData, getWeatherByCoordinates } from "@/lib/getWeather";
 import { geocodeCity } from "@/lib/geocode";
 import { WeatherData } from "@/types/weather";
 import Link from "next/link";
-import { Cloud, Wind, Search as SearchIcon, Loader2, Clock } from "lucide-react";
+import { Cloud, Wind, Search as SearchIcon, Loader2, Clock, CloudSun } from "lucide-react";
 import { WeatherIcon } from "@/components/WeatherIcon";
 import toast, { Toaster } from "react-hot-toast";
 import { DesktopNav } from "@/components/DesktopNav";
@@ -49,17 +49,25 @@ export default function AllCitiesPage() {
     loadDefaultCities();
   }, []);
 
-  // NEW: Load weather for all default cities
+  // NEW: Load weather for all default cities with rate limiting
   const loadDefaultCities = async () => {
     setIsLoadingDefault(true);
-    
-    const citiesData = await Promise.all(
-      CITIES.map(async (city) => ({
-        ...city,
-        weather: await getWeatherData(city.name),
-      }))
-    );
-    
+
+    // Load cities sequentially with a small delay to avoid rate limiting
+    const citiesData = [];
+    for (const city of CITIES) {
+      try {
+        const weather = await getWeatherData(city.name);
+        citiesData.push({ ...city, weather });
+        // Small delay between requests to avoid rate limiting (250ms)
+        await new Promise(resolve => setTimeout(resolve, 250));
+      } catch (error) {
+        console.error(`Failed to load weather for ${city.name}:`, error);
+        // Add city with null weather on error
+        citiesData.push({ ...city, weather: null });
+      }
+    }
+
     setCitiesWithWeather(citiesData);
     setIsLoadingDefault(false);
   };
@@ -325,10 +333,29 @@ export default function AllCitiesPage() {
       <Toaster position="top-center" reverseOrder={false} gutter={8} />
 
       <div className="max-w-6xl mx-auto">
-        {/* NEW: Toggle controls */}
-        <div className="flex justify-end gap-3 mb-6">
-          <ThemeToggle />
-          <TemperatureToggle />
+        {/* NEW: Top navigation with Home icon and toggles */}
+        <div className="flex justify-between items-center mb-6">
+          {/* Home button with logo - navigate to homepage */}
+          <Link
+            href="/"
+            className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group"
+            title="Go to Home"
+          >
+            <img
+              src="/city-images/weather-app_logo.png"
+              alt="Home"
+              className="w-6 h-6 transition-transform group-hover:scale-110"
+            />
+            <span className="text-sm font-light text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white hidden sm:inline">
+              Home
+            </span>
+          </Link>
+
+          {/* Toggle controls */}
+          <div className="flex gap-3">
+            <ThemeToggle />
+            <TemperatureToggle />
+          </div>
         </div>
 
         {/* Page Header Section */}

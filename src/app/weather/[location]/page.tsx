@@ -9,7 +9,7 @@ import { CurrentWeatherDetail } from "@/components/CurrentWeatherDetail";
 import { ForecastCard } from "@/components/ForecastCard";
 import { Button } from "@/components/ui/Button";
 // NEW: Import icons for minimalistic weather display
-import { Wind, Droplets, Cloud, Search, MapPin, Clock } from "lucide-react"; // MODIFIED: Added Search, MapPin and Clock icons
+import { Wind, Droplets, Cloud, Search, MapPin, Clock, CloudSun } from "lucide-react"; // MODIFIED: Added Search, MapPin, Clock and CloudSun icons
 // NEW: Import centralized WeatherIcon component for consistent icon display across pages
 import { WeatherIcon } from "@/components/WeatherIcon";
 import { DesktopNav } from "@/components/DesktopNav";
@@ -17,6 +17,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { TemperatureToggle } from "@/components/TemperatureToggle";
 import { useTemperature } from "@/contexts/TemperatureContext";
 import type { WeatherData } from "@/types/weather";
+import Link from "next/link";
 
 /**
  * Detailed Weather Page
@@ -97,10 +98,29 @@ export default function WeatherDetailPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 py-12 pb-24 md:pb-12">
       <main className="max-w-5xl mx-auto space-y-8">
 
-        {/* Toggle controls */}
-        <div className="flex justify-end gap-3 mb-4">
-          <ThemeToggle />
-          <TemperatureToggle />
+        {/* NEW: Top navigation with Home icon and toggles */}
+        <div className="flex justify-between items-center mb-4">
+          {/* Home button with logo - navigate to homepage */}
+          <Link
+            href="/"
+            className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group"
+            title="Go to Home"
+          >
+            <img
+              src="/city-images/weather-app_logo.png"
+              alt="Home"
+              className="w-6 h-6 transition-transform group-hover:scale-110"
+            />
+            <span className="text-sm font-light text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white hidden sm:inline">
+              Home
+            </span>
+          </Link>
+
+          {/* Toggle controls */}
+          <div className="flex gap-3">
+            <ThemeToggle />
+            <TemperatureToggle />
+          </div>
         </div>
 
         {/* MODIFIED: Updated header with minimalistic styling */}

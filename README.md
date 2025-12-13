@@ -4,32 +4,40 @@
 
 # The 'Dev' Weather App
 
-A minimalistic weather application built with Next.js 16, TypeScript, and Tailwind CSS featuring elegant design, dynamic city images, and comprehensive weather data.
+A minimalistic, everyday-use weather application built with Next.js 16, TypeScript, and Tailwind CSS. Search for any city worldwide, get real-time weather data, and see beautiful dynamic city images powered by Unsplash API.
 
 ## ✨ Features
 
-- **Minimalistic Design**: Clean, artistic interface with soft gradients and elegant typography
-- **Dynamic City Images**: Beautiful cityscape photos that change based on selected location
-- **City Overview Page**: View weather for all cities at once in a responsive grid
+### 🌟 New User Experience Updates
+- **"Where are you?" Prompt**: Set your home location on first visit for instant weather display
+- **Smart Search**: Search for any city worldwide with real-time geocoding
+- **Dynamic City Images**: Powered by Unsplash API - beautiful photos for any searched city
+- **Clickable Weather Cards**: Tap/click weather cards to view detailed forecasts
+- **Home Location Memory**: Your location is saved locally for quick access
+- **Durham Default**: Defaults to Durham, NC if no home location is set
+
+### 🎨 Core Features
+- **Minimalistic Design**: Clean, artistic interface designed for everyday use by all ages
+- **Real-Time Weather**: Live data from Open-Meteo API for any location
 - **Detailed Forecast**: 3-day weather predictions with visual weather icons
-- **Interactive UI**: City selection dropdown with instant weather updates
-- **Reusable Components**: Modular, well-documented component architecture
+- **Dark/Light Theme**: Toggle between themes with persistent preference
+- **Temperature Units**: Switch between Fahrenheit and Celsius
 - **Responsive Design**: Optimized for mobile, tablet, and desktop
+- **Reusable Components**: Modular, well-documented component architecture
 
-## 🌍 Available Cities
+## 🔍 Search Capabilities
 
-- Durham, NC, USA
-- New York, NY, USA
-- Tokyo, Japan
-- Accra, Ghana
-- Lausanne, Switzerland
-- Santorini, Greece
+- **Worldwide Search**: Find weather for any city globally (Paris, Tokyo, Sydney, etc.)
+- **Geocoding Integration**: Automatic coordinate lookup for searched locations
+- **Instant Results**: Fast API responses with loading states
+- **Smart Fallback**: Local images used if Unsplash API is unavailable
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js 18+ installed
 - npm or yarn package manager
+- (Optional) Free Unsplash API key for dynamic city images
 
 ### Installation
 
@@ -44,11 +52,22 @@ A minimalistic weather application built with Next.js 16, TypeScript, and Tailwi
    npm install
    ```
 
-3. **Add city images** (optional but recommended):
-   - Create folder: `public/city-images/`
-   - Add images: `durham.jpg`, `new-york.jpg`, `tokyo.jpg`, `accra.jpg`, `lausanne.jpg`, `santorini.jpg`
-   - Recommended size: 1200x800px
-   - See `CITY_IMAGES_SETUP.md` for detailed guide
+3. **Set up Unsplash API** (optional but recommended):
+   - Get your free API key from [Unsplash Developers](https://unsplash.com/developers)
+   - Create a `.env.local` file in the project root:
+     ```bash
+     # On Windows:
+     copy .env.local.example .env.local
+
+     # On macOS/Linux:
+     cp .env.local.example .env.local
+     ```
+   - Add your API key to `.env.local`:
+     ```env
+     NEXT_PUBLIC_UNSPLASH_ACCESS_KEY=your_actual_access_key_here
+     ```
+   - See [UNSPLASH_SETUP.md](docs/UNSPLASH_SETUP.md) for detailed instructions
+   - **Note**: The app works perfectly without this - it will use local fallback images
 
 4. **Run the development server**:
    ```bash
@@ -56,6 +75,12 @@ A minimalistic weather application built with Next.js 16, TypeScript, and Tailwi
    ```
 
 5. **Open your browser** and navigate to [http://localhost:3000](http://localhost:3000)
+
+6. **First-time setup**:
+   - You'll see "Where are you?" prompt
+   - Enter your city (e.g., "Durham", "London", "Tokyo")
+   - Your location will be saved for future visits
+   - Start searching for any city worldwide!
 
 ## 📁 Project Structure
 
@@ -131,26 +156,27 @@ This project showcases:
 - **Design Systems**: Consistent styling across all pages
 - **Conditional Rendering**: Different UI states (loading, error, success)
 
-## 🆕 Recent Updates
+## 🆕 Latest Updates (December 2025)
 
-### New Components
-- `CityPictureCard.tsx` - Dynamic city image display
-- Updated `WeatherIcon.tsx` - Lucide React icons instead of emojis
-- Enhanced `Button.tsx` - Icon support with flexible positioning
+### 🎯 Major User Experience Overhaul
+- **Home Location Feature**: "Where are you?" prompt on first visit with localStorage persistence
+- **Search-First Interface**: Replaced dropdown with dynamic search input for worldwide city lookup
+- **Unsplash API Integration**: Dynamic city images fetched from Unsplash for any searched location
+- **Clickable Weather Cards**: Cards now navigate to detailed forecast page with smooth animations
+- **Smart Defaults**: Durham, NC as default location for new users
 
-### New Pages
-- `/weather/all-cities` - Overview grid of all cities with weather
+### 🔧 Technical Improvements
+- **Geocoding Integration**: Real-time coordinate lookup for any city worldwide
+- **Image Fallback System**: Graceful degradation to local images if Unsplash unavailable
+- **Enhanced Error Handling**: Better user feedback with toast notifications
+- **Improved Loading States**: Skeleton screens and spinners for better UX
+- **Next.js Image Optimization**: Remote image pattern support for Unsplash
 
-### Design Overhaul
-- Minimalistic black/white/gray color scheme
-- Consistent card styling across all pages
-- Enhanced buttons with icons (Eye, MapPin, Search)
-- Improved typography and spacing
-
-### Data Expansion
-- Added 3 new cities: Accra, Lausanne, Santorini
-- Comprehensive weather data for all 6 cities
-- Realistic climate-appropriate data
+### 📦 New Files & Documentation
+- `src/lib/unsplash.ts` - Unsplash API integration utility
+- `docs/UNSPLASH_SETUP.md` - Comprehensive setup guide for API configuration
+- `.env.local.example` - Environment variable template
+- `docs/` - All documentation in one organized folder
 
 ## 🔧 Building for Production
 
@@ -164,17 +190,35 @@ npm start
 
 ## 📖 Additional Documentation
 
-- `CITY_IMAGES_SETUP.md` - Guide for adding city images
-- `IMPLEMENTATION_SUMMARY.md` - Detailed changelog of all updates
+All documentation is organized in the [`docs/`](docs/) folder:
 
-## 🎯 Future Enhancements
+- [QUICK_START.md](docs/QUICK_START.md) - Get running in 3 minutes
+- [UNSPLASH_SETUP.md](docs/UNSPLASH_SETUP.md) - **NEW!** Complete guide for Unsplash API setup
+- [UPDATE_SUMMARY_DEC2025.md](docs/UPDATE_SUMMARY_DEC2025.md) - Detailed changelog of latest updates
+- [TESTING_CHECKLIST.md](docs/TESTING_CHECKLIST.md) - QA testing guide
+- `CITY_IMAGES_SETUP.md` - Guide for adding local fallback city images
+- `IMPLEMENTATION_SUMMARY.md` - Historical changelog
 
-- Real API integration (Open-Meteo or similar)
-- User location detection
-- Hourly forecast view
-- Weather alerts and notifications
-- Temperature unit toggle (°F/°C)
-- More cities and locations
+## 🎯 Completed Features ✅
+
+- ✅ Real API integration (Open-Meteo for weather)
+- ✅ Geocoding for any worldwide location
+- ✅ Temperature unit toggle (°F/°C)
+- ✅ Dark/Light theme toggle
+- ✅ User home location with localStorage
+- ✅ Dynamic city images via Unsplash API
+- ✅ Clickable/tappable weather cards
+- ✅ Worldwide city search
+
+## 🚀 Future Enhancements
+
+- Browser geolocation detection (auto-detect user's city)
+- Hourly forecast view (12-24 hour predictions)
+- Weather alerts and severe weather notifications
+- Favorite cities list
+- Weather comparison (multiple cities side-by-side)
+- Share weather card as image
+- Offline mode with cached data
 
 ## 📝 License
 

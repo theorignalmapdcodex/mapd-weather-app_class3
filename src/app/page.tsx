@@ -4,15 +4,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LocationSearch } from "@/components/LocationSearch";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { WeatherDisplay } from "@/components/WeatherDisplay";
 import { PageHeader } from "@/components/PageHeader";
-import { getWeatherData } from "@/lib/getWeather";
+import { getWeatherByCoordinates } from "@/lib/getWeather";
+import { geocodeCity } from "@/lib/geocode";
 import { WeatherData } from "@/types/weather";
 // NEW: Import Search icon for visual enhancement
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, MapPin } from "lucide-react";
 // NEW: Import react-hot-toast for notifications
 import toast, { Toaster } from "react-hot-toast";
 // NEW: Import DesktopNav for desktop navigation
@@ -23,19 +23,92 @@ import { TemperatureToggle } from "@/components/TemperatureToggle";
 
 // Default city to display on load
 const DEFAULT_CITY = "Durham";
+const DEFAULT_LAT = 35.9940;
+const DEFAULT_LON = -78.8986;
 
 export default function Home() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // NEW: State for user's home location and search query
+  const [homeLocation, setHomeLocation] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [showLocationPrompt, setShowLocationPrompt] = useState(true);
+
   useEffect(() => {
-    // Load default city weather on mount
-     
-    loadCityWeather(DEFAULT_CITY);
+    // NEW: Check if user has set their home location in localStorage
+    const savedLocation = localStorage.getItem("homeLocation");
+
+    if (savedLocation) {
+      setHomeLocation(savedLocation);
+      setShowLocationPrompt(false);
+      // Load saved location weather
+      loadCityWeather(savedLocation);
+    } else {
+      // Show prompt - don't load Durham automatically
+      setShowLocationPrompt(true);
+      setLoading(false);
+    }
   }, []);
 
-  // MODIFIED: Enhanced with toast notifications for better UX
+  // NEW: Handle setting user's home location
+  const handleSetHomeLocation = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!homeLocation.trim()) {
+      toast.error("Please enter your location", {
+        style: {
+          background: '#ffffff',
+          color: '#dc2626',
+          border: '1px solid #ef4444',
+          borderRadius: '12px',
+          padding: '12px 20px',
+          fontWeight: '300',
+        },
+      });
+      return;
+    }
+
+    // Save to localStorage and load weather
+    localStorage.setItem("homeLocation", homeLocation);
+    setShowLocationPrompt(false);
+    loadCityWeather(homeLocation);
+
+    toast.success(`Home location set to ${homeLocation}!`, {
+      style: {
+        background: '#ffffff',
+        color: '#059669',
+        border: '1px solid #10b981',
+        borderRadius: '12px',
+        padding: '12px 20px',
+        fontWeight: '300',
+      },
+    });
+  };
+
+  // NEW: Handle city search
+  const handleCitySearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!searchQuery.trim()) {
+      toast.error("Please enter a city name", {
+        style: {
+          background: '#ffffff',
+          color: '#dc2626',
+          border: '1px solid #ef4444',
+          borderRadius: '12px',
+          padding: '12px 20px',
+          fontWeight: '300',
+        },
+      });
+      return;
+    }
+
+    loadCityWeather(searchQuery);
+  };
+
+  // MODIFIED: Enhanced with geocoding API for any city worldwide
   const loadCityWeather = async (cityName: string) => {
     setLoading(true);
     setError("");
@@ -53,15 +126,41 @@ export default function Home() {
     });
 
     try {
-      const data = await getWeatherData(cityName);
+      // NEW: Use geocoding API to get coordinates for any city
+      const geoResult = await geocodeCity(cityName);
+
+      if (!geoResult) {
+        setError(`Could not find location: ${cityName}`);
+        toast.error(`Could not find location: ${cityName}`, {
+          id: loadingToast,
+          duration: 4000,
+          style: {
+            background: '#ffffff',
+            color: '#dc2626',
+            border: '1px solid #ef4444',
+            borderRadius: '12px',
+            padding: '12px 20px',
+            fontWeight: '300',
+          },
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Get weather data using coordinates
+      const data = await getWeatherByCoordinates(
+        geoResult.name,
+        geoResult.latitude,
+        geoResult.longitude
+      );
 
       if (data) {
         setWeather(data);
-        
+
         // NEW: Show success toast
-        toast.success(`Weather loaded for ${cityName}!`, {
-          id: loadingToast, // Replace loading toast
-          duration: 3000, // Auto-dismiss after 3 seconds
+        toast.success(`Weather loaded for ${data.city}!`, {
+          id: loadingToast,
+          duration: 3000,
           style: {
             background: '#ffffff',
             color: '#059669',
@@ -74,10 +173,9 @@ export default function Home() {
         });
       } else {
         setError(`Failed to load weather data for ${cityName}`);
-        
-        // NEW: Show error toast
+
         toast.error(`Failed to load weather for ${cityName}`, {
-          id: loadingToast, // Replace loading toast
+          id: loadingToast,
           duration: 4000,
           style: {
             background: '#ffffff',
@@ -90,7 +188,6 @@ export default function Home() {
         });
       }
     } catch (err) {
-      // NEW: Handle unexpected errors
       setError(`An error occurred while fetching weather`);
       toast.error('Something went wrong. Please try again.', {
         id: loadingToast,
@@ -159,17 +256,65 @@ export default function Home() {
           </p>
         </div>
 
-        {/* MODIFIED: Search section with enhanced styling */}
-        <div className="flex flex-col items-center">
-          {/* NEW: Search instruction with icon */}
-          <div className="flex items-center gap-2 mb-4 text-gray-700 dark:text-gray-300">
-            <Search size={18} strokeWidth={1.5} className="text-gray-600 dark:text-gray-400" />
-            <p className="text-sm font-light">Select from the top cities to view weather or Click 'View All Cities' below to search for more cities</p>
+        {/* NEW: "Where are you?" prompt - shown on first visit */}
+        {showLocationPrompt && (
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-3xl shadow-sm p-6 md:p-8 mb-6">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <MapPin size={24} strokeWidth={1.5} className="text-gray-600 dark:text-gray-400" />
+              <h2 className="text-2xl font-light text-gray-900 dark:text-white">
+                Where are you?
+              </h2>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 text-center mb-6 font-light">
+              Set your home location to see weather instantly
+            </p>
+            <form onSubmit={handleSetHomeLocation} className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                value={homeLocation}
+                onChange={(e) => setHomeLocation(e.target.value)}
+                placeholder="Enter your city (e.g., Durham, London, Tokyo)"
+                className="flex-1 px-4 py-3 rounded-2xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-light focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500"
+              />
+              <button
+                type="submit"
+                className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-light hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center gap-2"
+              >
+                <MapPin size={18} strokeWidth={1.5} />
+                Set Location
+              </button>
+            </form>
           </div>
-          
-          {/* Location search dropdown */}
-          <LocationSearch onCitySelect={loadCityWeather} />
-        </div>
+        )}
+
+        {/* NEW: City search bar - always visible after home location is set */}
+        {!showLocationPrompt && (
+          <div className="mb-6">
+            <form onSubmit={handleCitySearch} className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search
+                  size={20}
+                  strokeWidth={1.5}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500"
+                />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for any city..."
+                  className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-light focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-500"
+                />
+              </div>
+              <button
+                type="submit"
+                className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-light hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center gap-2"
+              >
+                <Search size={18} strokeWidth={1.5} />
+                Search
+              </button>
+            </form>
+          </div>
+        )}
 
         {/* MODIFIED: Enhanced loading state with spinner */}
         {loading && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar as CalendarIcon, Clock, MapPin, Star } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, MapPin, Star, CloudSun } from "lucide-react";
 import Link from "next/link";
 import { DesktopNav } from "@/components/DesktopNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -125,10 +125,29 @@ export default function CalendarPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 md:p-12 pb-24 md:pb-12">
       <div className="max-w-4xl mx-auto">
 
-        {/* Toggle controls */}
-        <div className="flex justify-end gap-3 mb-6">
-          <ThemeToggle />
-          <TemperatureToggle />
+        {/* NEW: Top navigation with Home icon and toggles */}
+        <div className="flex justify-between items-center mb-6">
+          {/* Home button with logo - navigate to homepage */}
+          <Link
+            href="/"
+            className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group"
+            title="Go to Home"
+          >
+            <img
+              src="/city-images/weather-app_logo.png"
+              alt="Home"
+              className="w-6 h-6 transition-transform group-hover:scale-110"
+            />
+            <span className="text-sm font-light text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white hidden sm:inline">
+              Home
+            </span>
+          </Link>
+
+          {/* Toggle controls */}
+          <div className="flex gap-3">
+            <ThemeToggle />
+            <TemperatureToggle />
+          </div>
         </div>
 
         {/* Header */}
