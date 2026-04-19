@@ -3,9 +3,11 @@ import { Syne, Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from '@vercel/analytics/next';
 import { BottomNav } from "@/components/BottomNav";
+import { ClientLayout } from "@/components/ClientLayout";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TemperatureProvider } from "@/contexts/TemperatureContext";
 import { WeatherProvider } from "@/contexts/WeatherContext";
+import { TaskProvider } from "@/contexts/TaskContext";
 
 const syne = Syne({
   variable: "--font-syne",
@@ -51,9 +53,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <TemperatureProvider>
             <WeatherProvider>
-              {children}
-              <BottomNav />
-              <Analytics />
+              <TaskProvider>
+                <ClientLayout>
+                  {children}
+                  <BottomNav />
+                </ClientLayout>
+                <Analytics />
+              </TaskProvider>
             </WeatherProvider>
           </TemperatureProvider>
         </ThemeProvider>

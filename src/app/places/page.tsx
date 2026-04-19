@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTemperature } from "@/contexts/TemperatureContext";
 import { useWeather } from "@/contexts/WeatherContext";
@@ -19,14 +19,14 @@ const BODY = 'var(--font-space-grotesk), "Space Grotesk", system-ui';
 function toC(f: number) { return Math.round((f - 32) * 5 / 9); }
 function displayTemp(f: number, unit: string) { return unit === 'C' ? toC(f) : f; }
 
-interface SavedCity { name: string; country?: string; }
+interface SavedCity { name: string; }
 
-const CITY_GRADIENTS = [
-  'linear-gradient(135deg, #C87941 0%, #7B4A20 100%)',
-  'linear-gradient(135deg, #1A3A5C 0%, #2E6B9E 100%)',
-  'linear-gradient(135deg, #3D2B1F 0%, #8B5E3C 100%)',
-  'linear-gradient(135deg, #1C3A2A 0%, #2E8B57 100%)',
-  'linear-gradient(135deg, #4A1A2C 0%, #9B3060 100%)',
+const FALLBACK_GRADIENTS = [
+  'linear-gradient(135deg,#C87941 0%,#7B4A20 100%)',
+  'linear-gradient(135deg,#1A3A5C 0%,#2E6B9E 100%)',
+  'linear-gradient(135deg,#3D2B1F 0%,#8B5E3C 100%)',
+  'linear-gradient(135deg,#1C3A2A 0%,#2E8B57 100%)',
+  'linear-gradient(135deg,#4A1A2C 0%,#9B3060 100%)',
 ];
 
 export default function PlacesPage() {
@@ -35,13 +35,21 @@ export default function PlacesPage() {
   const { weather: homeWeather, loadCity } = useWeather();
   const [cities, setCities] = useState<SavedCity[]>([]);
   const [cityWeathers, setCityWeathers] = useState<Record<string, WeatherData | null>>({});
+  const [cityPhotos, setCityPhotos] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [adding, setAdding] = useState(false);
+  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
+    // Load photos from localStorage
+    const savedPhotos = localStorage.getItem('cc-city-photos');
+    if (savedPhotos) {
+      try { setCityPhotos(JSON.parse(savedPhotos)); } catch { /* ignore */ }
+    }
+
+    // Load saved cities
     const saved = localStorage.getItem('cc-saved-cities');
     const initial: SavedCity[] = saved ? JSON.parse(saved) : [];
-    // Ensure home city is in the list
     if (homeWeather && !initial.find(c => c.name.toLowerCase() === homeWeather.city.toLowerCase())) {
       initial.unshift({ name: homeWeather.city });
     }
@@ -51,11 +59,14 @@ export default function PlacesPage() {
   }, [homeWeather?.city]);
 
   const fetchCityWeather = async (name: string) => {
-    if (cityWeathers[name]) return;
+    setCityWeathers(prev => {
+      if (prev[name] !== undefined) return prev;
+      return { ...prev, [name]: null };
+    });
     const geo = await geocodeCity(name);
     if (!geo) return;
     const data = await getWeatherByCoordinates(geo.name, geo.latitude, geo.longitude);
-    setCityWeathers(prev => ({ ...prev, [name]: data }));
+    setCityWeathers(prev => ({ ...prev, [name]: data ?? null }));
   };
 
   const saveList = (list: SavedCity[]) => {
@@ -68,7 +79,7 @@ export default function PlacesPage() {
     setAdding(true);
     const geo = await geocodeCity(search.trim());
     if (geo && !cities.find(c => c.name.toLowerCase() === geo.name.toLowerCase())) {
-      const newList = [...cities, { name: geo.name, country: geo.country }];
+      const newList = [...cities, { name: geo.name }];
       saveList(newList);
       fetchCityWeather(geo.name);
     }
@@ -76,52 +87,59 @@ export default function PlacesPage() {
     setAdding(false);
   };
 
-  const removeCity = (name: string) => {
-    saveList(cities.filter(c => c.name !== name));
-  };
+  const removeCity = (name: string) => saveList(cities.filter(c => c.name !== name));
 
   const setAsHome = (name: string) => {
     loadCity(name);
-    localStorage.setItem('homeLocation', name);
+    // Move to front
+    const updated = [{ name }, ...cities.filter(c => c.name !== name)];
+    saveList(updated);
   };
+
+  const handlePhotoUpload = (cityName: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const base64 = e.target?.result as string;
+      const updated = { ...cityPhotos, [cityName]: base64 };
+      setCityPhotos(updated);
+      localStorage.setItem('cc-city-photos', JSON.stringify(updated));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removePhoto = (cityName: string) => {
+    const updated = { ...cityPhotos };
+    delete updated[cityName];
+    setCityPhotos(updated);
+    localStorage.setItem('cc-city-photos', JSON.stringify(updated));
+  };
+
+  const isHomeCity = (name: string) =>
+    homeWeather?.city.toLowerCase() === name.toLowerCase();
 
   const pageStyle = {
     background: theme.bg, minHeight: '100dvh',
     padding: '56px 16px 120px', color: theme.ink, fontFamily: BODY,
   };
 
-  const isHomeCity = (name: string) => homeWeather?.city.toLowerCase() === name.toLowerCase();
-
   return (
     <div style={pageStyle}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div style={{ flex: 1 }}><CCHeader /></div>
-        <Link href="/settings" style={{
-          width: 36, height: 36, borderRadius: 999, background: theme.chip,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          textDecoration: 'none', marginTop: -24, marginLeft: 8,
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="2.5" stroke={theme.chipText} strokeWidth="1.8" />
-            <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
-              stroke={theme.chipText} strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-        </Link>
-      </div>
+      <CCHeader />
 
-      {/* Page label */}
       <div style={{ fontFamily: MONO, fontSize: 11, color: theme.mute, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10 }}>
         Saved Places
       </div>
-
-      {/* Big headline */}
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 'clamp(38px, 12vw, 56px)', letterSpacing: -2, lineHeight: 0.92, marginBottom: 24 }}>
         Your cities.
       </div>
 
       {/* Search bar */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: theme.card, borderRadius: 999, padding: '0 16px', border: `1px solid ${theme.border}`, gap: 8 }}>
+        <div style={{
+          flex: 1, display: 'flex', alignItems: 'center',
+          background: theme.card, borderRadius: 999,
+          padding: '0 16px', border: `1px solid ${theme.border}`, gap: 8,
+        }}>
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
             <circle cx="9" cy="9" r="6" stroke={theme.mute} strokeWidth="1.8" />
             <path d="M13 13l4 4" stroke={theme.mute} strokeWidth="1.8" strokeLinecap="round" />
@@ -138,12 +156,11 @@ export default function PlacesPage() {
             }}
           />
         </div>
-        <button onClick={addCity} style={{
+        <button type="button" onClick={addCity} style={{
           width: 44, height: 44, borderRadius: 999, background: accent,
           border: 'none', cursor: 'pointer', color: theme.bg,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: DISPLAY, fontSize: 22, fontWeight: 700,
-          flexShrink: 0, alignSelf: 'center',
+          fontSize: 22, fontFamily: DISPLAY, fontWeight: 700, flexShrink: 0,
         }}>
           {adding ? '…' : '+'}
         </button>
@@ -154,89 +171,151 @@ export default function PlacesPage() {
         {cities.map((city, i) => {
           const w = cityWeathers[city.name];
           const isHome = isHomeCity(city.name);
-          const grad = CITY_GRADIENTS[i % CITY_GRADIENTS.length];
+          const photo = cityPhotos[city.name];
+          const grad = FALLBACK_GRADIENTS[i % FALLBACK_GRADIENTS.length];
           const condition = w ? weatherCodeToCondition(w.current.condition.code) : 'sunny';
 
           const localTime = w ? (() => {
-            try { return new Date().toLocaleTimeString('en-US', { timeZone: w.timezone, hour: 'numeric', minute: '2-digit', hour12: true }); }
-            catch { return ''; }
+            try {
+              return new Date().toLocaleTimeString('en-US', {
+                timeZone: w.timezone, hour: 'numeric', minute: '2-digit', hour12: true,
+              });
+            } catch { return ''; }
           })() : '';
 
           return (
             <div key={city.name} style={{
-              display: 'flex', background: theme.card,
-              borderRadius: 20, overflow: 'hidden',
+              display: 'flex', background: theme.card, borderRadius: 20,
+              overflow: 'hidden',
               border: isHome ? `1.5px solid ${accent}50` : `1px solid ${theme.border}`,
-              position: 'relative',
             }}>
-              {/* Photo / gradient panel */}
+              {/* Photo panel */}
               <div style={{
-                width: 90, flexShrink: 0,
-                background: grad,
-                display: 'flex', alignItems: 'flex-end',
-                padding: 10, position: 'relative',
+                width: 90, flexShrink: 0, position: 'relative',
+                background: photo ? 'transparent' : grad,
+                backgroundImage: photo ? `url(${photo})` : undefined,
+                backgroundSize: 'cover', backgroundPosition: 'center',
+                minHeight: 110,
               }}>
+                {/* Overlay gradient for readability */}
+                {photo && (
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.5) 100%)',
+                  }} />
+                )}
+
                 {isHome && (
                   <div style={{
-                    position: 'absolute', top: 8, left: 8,
-                    background: accent, borderRadius: 99, padding: '2px 6px',
-                    fontFamily: MONO, fontSize: 8, fontWeight: 700, color: theme.bg, letterSpacing: 0.5,
+                    position: 'absolute', top: 8, left: 8, zIndex: 2,
+                    background: accent, borderRadius: 99, padding: '2px 7px',
+                    fontFamily: MONO, fontSize: 7, fontWeight: 700,
+                    color: theme.bg, letterSpacing: 0.5, textTransform: 'uppercase',
                   }}>HOME</div>
                 )}
-                <div style={{ fontFamily: MONO, fontSize: 9, color: 'rgba(255,255,255,0.7)', letterSpacing: 0.5 }}>
-                  YOUR PHOTO
+
+                {/* Photo upload / remove button */}
+                <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 2 }}>
+                  {photo ? (
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(city.name)}
+                      style={{
+                        fontFamily: MONO, fontSize: 8, fontWeight: 700,
+                        color: 'rgba(255,255,255,0.85)', background: 'rgba(0,0,0,0.45)',
+                        borderRadius: 99, padding: '3px 8px', border: 'none',
+                        cursor: 'pointer', letterSpacing: 0.3,
+                      }}
+                    >✕ PHOTO</button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => fileRefs.current[city.name]?.click()}
+                        style={{
+                          fontFamily: MONO, fontSize: 8, fontWeight: 700,
+                          color: 'rgba(255,255,255,0.75)', background: 'rgba(0,0,0,0.35)',
+                          borderRadius: 99, padding: '3px 8px', border: 'none',
+                          cursor: 'pointer', letterSpacing: 0.3,
+                        }}
+                      >+ PHOTO</button>
+                      <input
+                        ref={el => { fileRefs.current[city.name] = el; }}
+                        type="file"
+                        accept="image/*"
+                        aria-label={`Upload photo for ${city.name}`}
+                        style={{ display: 'none' }}
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) handlePhotoUpload(city.name, file);
+                          e.target.value = '';
+                        }}
+                      />
+                    </>
+                  )}
                 </div>
               </div>
 
               {/* City info */}
               <div style={{ flex: 1, padding: '14px 14px 14px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-                  <div>
-                    <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 20, letterSpacing: -0.5, lineHeight: 1 }}>
-                      {city.name.length > 8 ? city.name.slice(0, 8) + '…' : city.name}
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{
+                      fontFamily: DISPLAY, fontWeight: 800, fontSize: 20,
+                      letterSpacing: -0.5, lineHeight: 1,
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
+                      {city.name}
                     </div>
-                    <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, marginTop: 2 }}>
-                      {city.country ?? ''}{localTime ? ` · ${localTime}` : ''}
+                    <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, marginTop: 3 }}>
+                      {localTime || '—'}
                     </div>
                   </div>
-                  {w && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <WeatherIcon type={condition} size={22} color={theme.ink} accent={accent} />
-                      <div style={{ fontFamily: DISPLAY, fontSize: 22, fontWeight: 800 }}>
-                        {displayTemp(w.current.temperature, unit)}°
-                      </div>
-                    </div>
-                  )}
-                  {!w && <div style={{ fontFamily: MONO, fontSize: 10, color: theme.muter }}>Loading…</div>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, marginLeft: 8 }}>
+                    {w ? (
+                      <>
+                        <WeatherIcon type={condition} size={22} color={theme.ink} accent={accent} />
+                        <div style={{ fontFamily: DISPLAY, fontSize: 22, fontWeight: 800 }}>
+                          {displayTemp(w.current.temperature, unit)}°
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ fontFamily: MONO, fontSize: 10, color: theme.muter }}>…</div>
+                    )}
+                  </div>
                 </div>
 
                 {w && (
-                  <div style={{ fontFamily: MONO, fontSize: 11, color: theme.mute, marginTop: 6 }}>
+                  <div style={{ fontFamily: MONO, fontSize: 11, color: theme.mute, marginBottom: 10 }}>
                     {CONDITION_LABELS[condition]}
                   </div>
                 )}
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {!isHome && (
-                    <button onClick={() => setAsHome(city.name)} style={{
+                    <button type="button" onClick={() => setAsHome(city.name)} style={{
                       fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
-                      color: accent, background: `${accent}15`, borderRadius: 99,
-                      padding: '4px 10px', border: `1px solid ${accent}30`, cursor: 'pointer',
+                      color: accent, background: `${accent}15`,
+                      borderRadius: 99, padding: '4px 10px',
+                      border: `1px solid ${accent}30`, cursor: 'pointer',
                       textTransform: 'uppercase',
                     }}>Set home</button>
                   )}
                   <Link href={`/weather/${encodeURIComponent(city.name.toLowerCase())}`} style={{
                     fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
-                    color: theme.mute, background: theme.border, borderRadius: 99,
-                    padding: '4px 10px', border: `1px solid ${theme.border}`, cursor: 'pointer',
+                    color: theme.mute, background: theme.bgAlt,
+                    borderRadius: 99, padding: '4px 10px',
+                    border: `1px solid ${theme.border}`, cursor: 'pointer',
                     textTransform: 'uppercase', textDecoration: 'none',
+                    display: 'inline-block',
                   }}>Details</Link>
                   {!isHome && (
-                    <button onClick={() => removeCity(city.name)} style={{
+                    <button type="button" onClick={() => removeCity(city.name)} style={{
                       fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
-                      color: theme.muter, background: 'transparent', borderRadius: 99,
-                      padding: '4px 10px', border: `1px solid ${theme.border}`, cursor: 'pointer',
+                      color: theme.muter, background: 'transparent',
+                      borderRadius: 99, padding: '4px 10px',
+                      border: `1px solid ${theme.border}`, cursor: 'pointer',
                       textTransform: 'uppercase',
                     }}>Remove</button>
                   )}
@@ -246,13 +325,32 @@ export default function PlacesPage() {
           );
         })}
 
-        {/* Add city prompt */}
-        <div style={{
-          border: `1.5px dashed ${theme.border}`, borderRadius: 20, padding: '20px 16px',
-          textAlign: 'center', color: theme.muter,
+        {/* Empty prompt */}
+        {cities.length === 0 && (
+          <div style={{
+            border: `1.5px dashed ${theme.border}`, borderRadius: 20,
+            padding: '32px 16px', textAlign: 'center', color: theme.muter,
+            fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase',
+          }}>
+            Search above to add your first city
+          </div>
+        )}
+      </div>
+
+      {/* Settings link */}
+      <div style={{ marginTop: 32, textAlign: 'center' }}>
+        <Link href="/settings" style={{
+          fontFamily: MONO, fontSize: 11, color: theme.mute,
+          letterSpacing: 1, textTransform: 'uppercase', textDecoration: 'none',
+          display: 'inline-flex', alignItems: 'center', gap: 6,
         }}>
-          <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase' }}>+ Add a city above</div>
-        </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="3" stroke={theme.mute} strokeWidth="1.8" />
+            <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+              stroke={theme.mute} strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          Customize theme & settings
+        </Link>
       </div>
     </div>
   );
