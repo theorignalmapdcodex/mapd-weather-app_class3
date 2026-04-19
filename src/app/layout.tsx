@@ -31,7 +31,10 @@ export const metadata: Metadata = {
   title: "CityCast",
   description: "Weather, but not boring.",
   manifest: "/manifest.json",
-  icons: { icon: '/favicon.svg', apple: '/favicon.svg' },
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/icons/icon-192.png',
+  },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "CityCast" },
 };
 
