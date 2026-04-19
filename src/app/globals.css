@@ -6,51 +6,82 @@
   --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", monospace;
 }
 
-* {
+/* ─── Reset ─────────────────────────────────────────────── */
+*, *::before, *::after {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* let the page fill edge-to-edge on notched phones */
+  height: -webkit-fill-available;
 }
 
 body {
   font-family: var(--font-space-grotesk), "Space Grotesk", system-ui, sans-serif;
   margin: 0;
   padding: 0;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;  /* iOS Safari fix */
+  min-height: 100dvh;                  /* modern fallback */
+  overscroll-behavior-y: none;         /* no rubber-band bounce on Android */
+  touch-action: manipulation;          /* no 300ms tap delay */
 }
 
-/* Safe area support */
-.safe-top { padding-top: env(safe-area-inset-top); }
-.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+/* ─── Flexbox utilities (webkit-prefixed for Android 4 / old iOS) ── */
+.flex          { display: -webkit-flex; display: flex; }
+.flex-col      { -webkit-flex-direction: column; flex-direction: column; }
+.flex-center   { -webkit-align-items: center; align-items: center;
+                 -webkit-justify-content: center; justify-content: center; }
+.flex-between  { -webkit-justify-content: space-between; justify-content: space-between; }
+.flex-wrap     { -webkit-flex-wrap: wrap; flex-wrap: wrap; }
+.flex-1        { -webkit-flex: 1; flex: 1; }
+.flex-shrink-0 { -webkit-flex-shrink: 0; flex-shrink: 0; }
 
-/* Smooth scrolling horizontal strips */
+/* ─── Safe area helpers ──────────────────────────────────── */
+.safe-top    { padding-top: env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* ─── Scroll strips ──────────────────────────────────────── */
 .scroll-x {
   overflow-x: auto;
+  overflow-y: hidden;
   -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 .scroll-x::-webkit-scrollbar { display: none; }
 
-/* Snap scrolling */
-.snap-x { scroll-snap-type: x mandatory; }
-.snap-start { scroll-snap-align: start; }
+/* ─── Snap scrolling ─────────────────────────────────────── */
+.snap-x      { scroll-snap-type: x mandatory; }
+.snap-start  { scroll-snap-align: start; }
 
-/* Min-height for mobile viewport */
-@supports (height: 100dvh) {
-  .min-h-screen { min-height: 100dvh; }
-}
-
-/* Tap target minimum size */
+/* ─── Tap target minimum ─────────────────────────────────── */
 .tap-target {
   min-width: 44px;
   min-height: 44px;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
 }
 
-/* Prevent text selection on interactive elements */
+/* ─── No text select on UI chrome ───────────────────────── */
 .no-select { -webkit-user-select: none; user-select: none; }
+
+/* ─── Input / button resets for iOS ─────────────────────── */
+input, button, select, textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 0;
+}
+button { cursor: pointer; }
+
+/* ─── Spinner animation ──────────────────────────────────── */
+@keyframes cc-spin { to { transform: rotate(360deg); } }

@@ -66,7 +66,7 @@ export default function CalendarPage() {
 
   const pageStyle = {
     background: theme.bg, minHeight: '100dvh',
-    padding: '56px 16px 120px', color: theme.ink, fontFamily: BODY,
+    padding: '0 16px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)', color: theme.ink, fontFamily: BODY,
   };
 
   return (

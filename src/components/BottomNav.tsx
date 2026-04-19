@@ -140,8 +140,9 @@ export function BottomNav() {
 
   return (
     <nav style={{
-      position: 'fixed', bottom: 16, left: 16, right: 16, zIndex: 50,
-      paddingBottom: 'env(safe-area-inset-bottom)',
+      position: 'fixed',
+      bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
+      left: 16, right: 16, zIndex: 50,
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-around',
