@@ -1,281 +1,192 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Calendar as CalendarIcon, Clock, MapPin, Star, CloudSun } from "lucide-react";
-import Link from "next/link";
-import { DesktopNav } from "@/components/DesktopNav";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { TemperatureToggle } from "@/components/TemperatureToggle";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useTemperature } from "@/contexts/TemperatureContext";
+import { Brand } from "@/components/Brand";
+import { CCCard } from "@/components/CCCard";
+import { WeatherIcon } from "@/components/WeatherIcon";
+import { getWeatherByCoordinates } from "@/lib/getWeather";
+import { geocodeCity } from "@/lib/geocode";
+import { WeatherData, DailyForecast } from "@/types/weather";
 
-/**
- * Calendar Page
- *
- * Interactive calendar showing current date and time across different timezones
- * Features:
- * - Current month calendar view
- * - Real-time clock
- * - Major world timezone selection
- * - Responsive design for mobile and desktop
- */
+const MONO = 'var(--font-jetbrains-mono), "JetBrains Mono", monospace';
+const DISPLAY = 'var(--font-syne), "Syne", system-ui';
+const BODY = 'var(--font-space-grotesk), "Space Grotesk", system-ui';
 
-// Major world timezones with unique city icons
-const TIMEZONES = [
-  { name: "New York", zone: "America/New_York", flag: "🗽" },      // Statue of Liberty
-  { name: "London", zone: "Europe/London", flag: "🏰" },           // Castle/Big Ben
-  { name: "Paris", zone: "Europe/Paris", flag: "🗼" },             // Eiffel Tower
-  { name: "Tokyo", zone: "Asia/Tokyo", flag: "🗾" },               // Japan map
-  { name: "Sydney", zone: "Australia/Sydney", flag: "🦘" },        // Kangaroo
-  { name: "Dubai", zone: "Asia/Dubai", flag: "🕌" },               // Mosque/Architecture
-  { name: "Los Angeles", zone: "America/Los_Angeles", flag: "🎬" }, // Hollywood
-  { name: "Hong Kong", zone: "Asia/Hong_Kong", flag: "🏙️" },       // Cityscape
-];
+function toC(f: number) { return Math.round((f - 32) * 5 / 9); }
+function disp(f: number, unit: string) { return unit === 'C' ? toC(f) : f; }
 
 export default function CalendarPage() {
+  const { theme, accent } = useTheme();
+  const { unit } = useTemperature();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedTimezone, setSelectedTimezone] = useState(TIMEZONES[0]);
   const [mounted, setMounted] = useState(false);
+  const [weather, setWeather] = useState<WeatherData | null>(null);
 
-  // Update time every second
   useEffect(() => {
     setMounted(true);
-    const timer = setInterval(() => {
-      setCurrentDate(new Date());
-    }, 1000);
+    const timer = setInterval(() => setCurrentDate(new Date()), 60000);
 
+    // Load weather for home city
+    const saved = localStorage.getItem("homeLocation");
+    if (saved) {
+      geocodeCity(saved).then(geo => {
+        if (!geo) return;
+        return getWeatherByCoordinates(geo.name, geo.latitude, geo.longitude);
+      }).then(data => { if (data) setWeather(data); });
+    }
     return () => clearInterval(timer);
   }, []);
 
-  // Get calendar data for current month in selected timezone
-  const getCalendarDays = () => {
-    if (!mounted) return [];
+  const today = mounted ? currentDate.getDate() : null;
+  const month = mounted ? currentDate.getMonth() : new Date().getMonth();
+  const year = mounted ? currentDate.getFullYear() : new Date().getFullYear();
 
-    // Get the date in the selected timezone
-    const dateInTimezone = new Date(currentDate.toLocaleString("en-US", { timeZone: selectedTimezone.zone }));
-    const year = dateInTimezone.getFullYear();
-    const month = dateInTimezone.getMonth();
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-
-    const days = [];
-
-    // Add empty cells for days before the first of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(null);
-    }
-
-    // Add all days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      days.push(day);
-    }
-
-    return days;
-  };
-
-  // Format time for selected timezone
-  const getTimeInTimezone = () => {
-    if (!mounted) return "Loading...";
-
-    return currentDate.toLocaleTimeString("en-US", {
-      timeZone: selectedTimezone.zone,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-    });
-  };
-
-  // Format date for selected timezone
-  const getDateInTimezone = () => {
-    if (!mounted) return "Loading...";
-
-    return currentDate.toLocaleDateString("en-US", {
-      timeZone: selectedTimezone.zone,
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  // Get current date in selected timezone
-  const getToday = () => {
-    if (!mounted) return null;
-
-    const dateInTimezone = new Date(currentDate.toLocaleString("en-US", { timeZone: selectedTimezone.zone }));
-    return dateInTimezone.getDate();
-  };
-
-  // Get month name in selected timezone
   const monthName = mounted
-    ? currentDate.toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric",
-        timeZone: selectedTimezone.zone
-      })
-    : "";
-  const today = getToday();
-  const calendarDays = getCalendarDays();
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    ? currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : '';
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  // Map forecast to calendar days
+  const forecastMap: Record<number, DailyForecast> = {};
+  if (weather?.forecast) {
+    weather.forecast.forEach(f => {
+      const d = new Date(f.date + 'T12:00');
+      if (d.getMonth() === month && d.getFullYear() === year) {
+        forecastMap[d.getDate()] = f;
+      }
+    });
+  }
+
+  const pageStyle = {
+    background: theme.bg, minHeight: '100dvh',
+    padding: '56px 16px 120px', color: theme.ink, fontFamily: BODY,
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 md:p-12 pb-24 md:pb-12">
-      <div className="max-w-4xl mx-auto">
-
-        {/* NEW: Top navigation with Home icon and toggles */}
-        <div className="flex justify-between items-center mb-6">
-          {/* Home button with logo - navigate to homepage */}
-          <Link
-            href="/"
-            className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group"
-            title="Go to Home"
-          >
-            <img
-              src="/city-images/weather-app_logo.png"
-              alt="Home"
-              className="w-6 h-6 transition-transform group-hover:scale-110"
-            />
-            <span className="text-sm font-light text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white hidden sm:inline">
-              Home
-            </span>
-          </Link>
-
-          {/* Toggle controls */}
-          <div className="flex gap-3">
-            <ThemeToggle />
-            <TemperatureToggle />
+    <div style={pageStyle}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <Brand size={14} />
+        {weather && (
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 0.5 }}>
+            {weather.city}
           </div>
-        </div>
-
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
-              <CalendarIcon size={40} className="text-gray-900 dark:text-white" strokeWidth={1.5} />
-            </div>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-light mb-2 tracking-tight text-gray-900 dark:text-white">
-            World Calendar
-          </h1>
-          <p className="text-gray-700 dark:text-gray-300 text-base md:text-lg font-light">
-            Current date and time across the globe
-          </p>
-        </div>
-
-        {/* Timezone Selector */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <MapPin size={20} className="text-gray-600 dark:text-gray-400" strokeWidth={1.5} />
-            <h2 className="text-lg font-light text-gray-900 dark:text-white">Select Timezone</h2>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {TIMEZONES.map((tz) => (
-              <button
-                key={tz.zone}
-                onClick={() => setSelectedTimezone(tz)}
-                className={`p-3 rounded-xl border-2 transition-all duration-200 text-left ${
-                  selectedTimezone.zone === tz.zone
-                    ? "border-gray-900 dark:border-gray-100 bg-gray-50 dark:bg-gray-700 shadow-lg"
-                    : "border-gray-200 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 shadow-md hover:shadow-lg"
-                }`}
-              >
-                <div className="text-2xl mb-1">{tz.flag}</div>
-                <div className="text-sm font-light text-gray-900 dark:text-white">{tz.name}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Current Time Display */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 md:p-10 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Clock size={20} className="text-gray-600 dark:text-gray-400" strokeWidth={1.5} />
-            <h2 className="text-lg font-light text-gray-900 dark:text-white">
-              Current Time in {selectedTimezone.name}
-            </h2>
-          </div>
-
-          <div className="text-center">
-            <div className="text-5xl md:text-7xl font-light text-gray-900 dark:text-white mb-4 font-mono">
-              {getTimeInTimezone()}
-            </div>
-            <div className="text-lg md:text-xl text-gray-700 dark:text-gray-300 font-light">
-              {getDateInTimezone()}
-            </div>
-          </div>
-        </div>
-
-        {/* Calendar Grid */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 dark:border-gray-700 mb-6">
-          <h2 className="text-2xl font-light text-gray-900 dark:text-white mb-6 text-center">
-            {monthName}
-          </h2>
-
-          {/* Week day headers */}
-          <div className="grid grid-cols-7 gap-2 mb-2">
-            {weekDays.map((day) => (
-              <div
-                key={day}
-                className="text-center text-xs md:text-sm font-light text-gray-600 dark:text-gray-400 uppercase tracking-wide py-2"
-              >
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* Calendar days */}
-          <div className="grid grid-cols-7 gap-2">
-            {calendarDays.map((day, index) => (
-              <div
-                key={index}
-                className={`aspect-square flex flex-col items-center justify-center rounded-xl text-sm md:text-base font-light transition-colors ${
-                  day === null
-                    ? ""
-                    : day === today
-                    ? "bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white border-2 border-gray-900 dark:border-white shadow-lg"
-                    : "bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
-                }`}
-              >
-                {day === today && (
-                  <Star
-                    size={12}
-                    className="text-gray-900 dark:text-white mb-0.5"
-                    strokeWidth={2}
-                    fill="currentColor"
-                  />
-                )}
-                {day}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Footer Navigation */}
-        <div className="text-center">
-          <Link
-            href="/"
-            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-light text-sm transition-colors"
-          >
-            ← Back to Home
-          </Link>
-        </div>
-
-        {/* NEW: Desktop navigation - appears before footer on desktop only */}
-        <div className="mt-12">
-          <DesktopNav />
-        </div>
-
-        {/* Footer */}
-        <footer className="mt-8 mb-4 text-center">
-          <p className="text-gray-700 dark:text-gray-400 text-sm font-light">
-            Made with 🖤 by @theoriginalmapd
-          </p>
-        </footer>
+        )}
       </div>
+
+      {/* Title */}
+      <div style={{ fontFamily: MONO, fontSize: 11, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase' }}>
+        {mounted ? currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : ''}
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontSize: 'clamp(36px, 10vw, 52px)', fontWeight: 800, letterSpacing: -1.5, lineHeight: 1, marginTop: 6, marginBottom: 4 }}>
+        Month view.
+      </div>
+      <div style={{ fontSize: 13, color: theme.mute, marginBottom: 24, fontFamily: BODY }}>
+        Every day, forecasted. {weather ? `Showing ${weather.city}.` : 'Set your home city to see forecasts.'}
+      </div>
+
+      {/* Calendar grid */}
+      <CCCard style={{ marginBottom: 12, padding: 12 }}>
+        {/* Day headers */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
+          fontFamily: MONO, fontSize: 9, color: theme.mute,
+          textAlign: 'center', marginBottom: 4, letterSpacing: 0.5,
+        }}>
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+            <div key={i} style={{ padding: 4 }}>{d}</div>
+          ))}
+        </div>
+
+        {/* Day cells */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
+          {cells.map((d, i) => {
+            if (!d) return <div key={i} />;
+            const f = forecastMap[d];
+            const isToday = d === today;
+            return (
+              <div key={i} style={{
+                aspectRatio: '1',
+                padding: 4,
+                borderRadius: 8,
+                background: isToday ? theme.ink : f ? theme.cardAlt : 'transparent',
+                color: isToday ? theme.bg : theme.ink,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                position: 'relative',
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, fontFamily: MONO }}>{d}</div>
+                {f ? (
+                  <WeatherIcon
+                    code={f.condition.code}
+                    size={12}
+                    color={isToday ? theme.bg : theme.ink}
+                    accent={accent}
+                  />
+                ) : (
+                  <div style={{ height: 12 }} />
+                )}
+                {f && (
+                  <div style={{ fontFamily: MONO, fontSize: 8, color: isToday ? theme.bg : theme.mute, fontWeight: 600 }}>
+                    {disp(f.maxTemp, unit)}°
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </CCCard>
+
+      {/* Upcoming forecast list */}
+      {weather && (
+        <CCCard noPad>
+          <div style={{ padding: '12px 16px', fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', borderBottom: `1px solid ${theme.border}` }}>
+            Upcoming
+          </div>
+          {weather.forecast.map((f, i) => {
+            const date = new Date(f.date + 'T12:00');
+            const label = i === 0 ? 'Today' : date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            return (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '14px 16px',
+                borderTop: i > 0 ? `1px solid ${theme.border}` : 'none',
+              }}>
+                <div style={{ width: 72, fontFamily: MONO, fontSize: 10, color: theme.mute, fontWeight: 700, letterSpacing: 0.3 }}>
+                  {label.toUpperCase()}
+                </div>
+                <WeatherIcon code={f.condition.code} size={22} color={theme.ink} accent={accent} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, fontFamily: BODY }}>{f.condition.description}</div>
+                  <div style={{ fontFamily: MONO, fontSize: 10, color: f.precipProbability > 30 ? accent : theme.mute, marginTop: 2 }}>
+                    {f.precipProbability}% rain
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, fontFamily: DISPLAY, fontWeight: 700 }}>
+                  <span style={{ color: theme.mute, fontSize: 15 }}>{disp(f.minTemp, unit)}°</span>
+                  <span style={{ fontSize: 17, fontWeight: 800 }}>{disp(f.maxTemp, unit)}°</span>
+                </div>
+              </div>
+            );
+          })}
+        </CCCard>
+      )}
+
+      {/* Current time display */}
+      {mounted && (
+        <div style={{ textAlign: 'center', marginTop: 24, fontFamily: MONO, fontSize: 11, color: theme.muter, letterSpacing: 1 }}>
+          {currentDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+          {' · '}
+          {currentDate.toLocaleDateString('en-US', { weekday: 'long' })}
+        </div>
+      )}
     </div>
   );
 }

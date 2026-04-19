@@ -1,43 +1,44 @@
-/**
- * Weather data types
- *
- * These interfaces define the structure of weather data
- * used throughout the application
- */
-
 export interface WeatherCondition {
   code: number;
   description: string;
 }
 
 export interface CurrentWeather {
-  temperature: number; // in Fahrenheit
-  feelsLike: number; // in Fahrenheit
-  humidity: number; // percentage
-  windSpeed: number; // in mph
+  temperature: number;
+  feelsLike: number;
+  humidity: number;
+  windSpeed: number;
+  condition: WeatherCondition;
+}
+
+export interface HourlyForecast {
+  time: string;
+  temperature: number;
+  precipProbability: number;
+  weatherCode: number;
   condition: WeatherCondition;
 }
 
 export interface DailyForecast {
-  date: string; // ISO date string
-  maxTemp: number; // in Fahrenheit
-  minTemp: number; // in Fahrenheit
+  date: string;
+  maxTemp: number;
+  minTemp: number;
   condition: WeatherCondition;
+  precipProbability: number;
 }
 
 export interface WeatherData {
   city: string;
   latitude: number;
   longitude: number;
-  timezone: string; // IANA timezone identifier (e.g., "America/New_York")
+  timezone: string;
   current: CurrentWeather;
   forecast: DailyForecast[];
+  hourly?: HourlyForecast[];
+  sunrise?: string;
+  sunset?: string;
 }
 
-/**
- * WMO Weather interpretation codes
- * Reference: https://open-meteo.com/en/docs
- */
 export const WEATHER_CODES: Record<number, string> = {
   0: "Clear sky",
   1: "Mainly clear",

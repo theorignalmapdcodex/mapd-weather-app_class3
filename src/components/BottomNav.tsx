@@ -3,115 +3,115 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Home, Search, Calendar } from "lucide-react";
 
-/**
- * BottomNav Component
- *
- * Mobile-only fixed bottom navigation bar (hidden on desktop/laptop)
- * - Home: Navigate to main page
- * - Search: Navigate to all cities search page
- * - Calendar: Navigate to world calendar with timezone support
- *
- * Responsive design:
- * - Mobile/Tablet (< 768px): Visible with full-width layout
- * - Desktop/Laptop (≥ 768px): Hidden (navigation through page links instead)
- */
+const MONO = 'var(--font-jetbrains-mono), "JetBrains Mono", monospace';
+
+const TABS = [
+  {
+    href: "/",
+    label: "Now",
+    icon: (c: string) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5Z"
+          stroke={c} strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M9 21v-6h6v6" stroke={c} strokeWidth="1.8" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    href: "/hourly",
+    label: "Hourly",
+    icon: (c: string) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke={c} strokeWidth="1.8" />
+        <path d="M12 7v5l3 3" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    href: "/7-day",
+    label: "7-Day",
+    icon: (c: string) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="4" width="18" height="17" rx="3" stroke={c} strokeWidth="1.8" />
+        <line x1="3" y1="9" x2="21" y2="9" stroke={c} strokeWidth="1.8" />
+        <line x1="8" y1="2" x2="8" y2="6" stroke={c} strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="16" y1="2" x2="16" y2="6" stroke={c} strokeWidth="1.8" strokeLinecap="round" />
+        <circle cx="8" cy="14" r="1.2" fill={c} />
+        <circle cx="12" cy="14" r="1.2" fill={c} />
+        <circle cx="16" cy="14" r="1.2" fill={c} />
+        <circle cx="8" cy="18" r="1.2" fill={c} />
+        <circle cx="12" cy="18" r="1.2" fill={c} />
+      </svg>
+    ),
+  },
+  {
+    href: "/plan",
+    label: "Plan",
+    icon: (c: string) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <line x1="4" y1="7" x2="20" y2="7" stroke={c} strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="4" y1="12" x2="20" y2="12" stroke={c} strokeWidth="1.8" strokeLinecap="round" />
+        <line x1="4" y1="17" x2="14" y2="17" stroke={c} strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    href: "/places",
+    label: "Places",
+    icon: (c: string) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7Z"
+          stroke={c} strokeWidth="1.8" strokeLinejoin="round" />
+        <circle cx="12" cy="9" r="2.5" fill={c} />
+      </svg>
+    ),
+  },
+];
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { theme } = useTheme();
+  const { theme, accent } = useTheme();
 
-  const navItems = [
-    {
-      name: "Home",
-      href: "/",
-      icon: Home,
-    },
-    {
-      name: "Search",
-      href: "/weather/all-cities",
-      icon: Search,
-    },
-    {
-      name: "Calendar",
-      href: "/calendar",
-      icon: Calendar,
-    },
-  ];
-
-  // HARDCODED nav bar background style
-  const navBarStyle: React.CSSProperties = theme === "dark"
-    ? {
-        backgroundColor: "rgba(255, 255, 255, 0.95)",
-        borderTopWidth: "1px",
-        borderTopStyle: "solid",
-        borderTopColor: "#e5e7eb",
-      }
-    : {
-        backgroundColor: "rgba(0, 0, 0, 0.95)",
-        borderTopWidth: "1px",
-        borderTopStyle: "solid",
-        borderTopColor: "#1f2937",
-      };
-
-  // HARDCODED icon/text colors
-  const getItemStyle = (isActive: boolean): React.CSSProperties => {
-    if (theme === "dark") {
-      return {
-        color: "#000000",
-        backgroundColor: isActive ? "#f3f4f6" : "transparent",
-        borderWidth: isActive ? "1px" : "1px",
-        borderStyle: "solid",
-        borderColor: isActive ? "#d1d5db" : "transparent",
-      };
-    } else {
-      return {
-        color: isActive ? "#ffffff" : "#d1d5db",
-        backgroundColor: isActive ? "#374151" : "transparent",
-        borderWidth: isActive ? "1px" : "1px",
-        borderStyle: "solid",
-        borderColor: isActive ? "#4b5563" : "transparent",
-      };
-    }
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 backdrop-blur-md shadow-lg z-50 safe-area-inset-bottom" style={navBarStyle}>
-      {/*
-        Mobile-only navigation bar (hidden on desktop with md:hidden)
-        - Shows only on screens smaller than 768px (mobile/tablet)
-        - Hidden on desktop/laptop screens
-      */}
-      <div className="max-w-screen-xl mx-auto px-2">
-        <div className="flex items-center justify-around py-2">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-[70px] shadow-sm"
-                style={getItemStyle(isActive)}
-              >
-                <Icon
-                  size={24}
-                  strokeWidth={isActive ? 2.5 : 1.5}
-                  className="transition-all"
-                />
-                <span className="text-[10px] font-light tracking-wide">
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
+    <nav style={{
+      position: 'fixed', bottom: 16, left: 16, right: 16, zIndex: 50,
+      paddingBottom: 'env(safe-area-inset-bottom)',
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+        background: theme.chip, borderRadius: 999, padding: '8px 6px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
+      }}>
+        {TABS.map(tab => {
+          const active = isActive(tab.href);
+          const color = active ? accent : theme.chipText;
+          return (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                minWidth: 44, minHeight: 44, justifyContent: 'center',
+                textDecoration: 'none', WebkitUserSelect: 'none', userSelect: 'none',
+              }}
+            >
+              {tab.icon(color)}
+              <span style={{
+                fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
+                textTransform: 'uppercase', color, transition: 'color 0.15s',
+              }}>
+                {tab.label}
+              </span>
+            </Link>
+          );
+        })}
       </div>
-
-      {/* Safe area for mobile devices with notches/home indicators */}
-      <div className="h-safe-area-inset-bottom backdrop-blur-md" style={navBarStyle} />
     </nav>
   );
 }

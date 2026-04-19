@@ -1,132 +1,84 @@
-// MODIFIED: Removed getDummyWeatherData import - no longer using fallback to dummy data [import { getDummyWeatherData } from "@/data/weather-data";]
-import { WeatherData } from "@/types/weather";
+import { WeatherData, HourlyForecast, DailyForecast, getWeatherDescription } from "@/types/weather";
 import { getCityByName } from "@/data/cities";
-import { getWeatherDescription } from "@/types/weather";
 
-/**
- * Get weather data for a city
- *
- * MODIFIED: Now fetches real data from Open-Meteo API
- * Falls back to returning null if API fails (no dummy data)
- */
-
-// ========================================
-// OLD CODE - DUMMY DATA (COMMENTED OUT)
-// ========================================
-// export function getWeatherData(cityName: string): WeatherData | null {
-//   return getDummyWeatherData(cityName);
-// }
-
-// ========================================
-// NEW CODE - OPEN-METEO API INTEGRATION
-// ========================================
-
-/**
- * Fetches real weather data from Open-Meteo API using city name
- * 
- * @param cityName - Name of the city to get weather for
- * @returns Promise with WeatherData or null if city not found
- * 
- * API Documentation: https://open-meteo.com/en/docs
- */
 export async function getWeatherData(cityName: string): Promise<WeatherData | null> {
   try {
-    // Step 1: Get city coordinates from our cities data
     const city = getCityByName(cityName);
-    
-    if (!city) {
-      console.error(`City "${cityName}" not found in cities list`);
-      return null; // MODIFIED: Return null instead of dummy data
-    }
-
+    if (!city) return null;
     return await getWeatherByCoordinates(city.name, city.latitude, city.longitude);
-
   } catch (error) {
-    // MODIFIED: Return null instead of dummy data so user sees the error
-    // Log error for debugging
-    console.error(`Error fetching weather data for ${cityName}:`, error);
-    console.log(`API call failed - returning null to show error to user`);
-    
-    // Return null to trigger error state in UI
+    console.error(`Error fetching weather for ${cityName}:`, error);
     return null;
   }
 }
 
-/**
- * NEW FUNCTION: Fetch weather data using coordinates directly
- * Used for dynamic city search where we geocode first, then fetch weather
- * 
- * @param cityName - Name of the city (for display)
- * @param latitude - Latitude coordinate
- * @param longitude - Longitude coordinate
- * @returns Promise with WeatherData or null if fetch fails
- */
 export async function getWeatherByCoordinates(
   cityName: string,
   latitude: number,
   longitude: number
 ): Promise<WeatherData | null> {
   try {
-    // Step 2: Build Open-Meteo API URL with parameters
     const params = new URLSearchParams({
       latitude: latitude.toString(),
       longitude: longitude.toString(),
       current: 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m',
-      daily: 'weather_code,temperature_2m_max,temperature_2m_min',
-      temperature_unit: 'fahrenheit', // Get temps in Fahrenheit
-      wind_speed_unit: 'mph', // Get wind speed in mph
-      timezone: 'auto', // Automatic timezone detection
-      forecast_days: '3', // Get 3-day forecast (must be string)
+      hourly: 'temperature_2m,precipitation_probability,weather_code',
+      daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset',
+      temperature_unit: 'fahrenheit',
+      wind_speed_unit: 'mph',
+      timezone: 'auto',
+      forecast_days: '7',
     });
 
-    const apiUrl = `https://api.open-meteo.com/v1/forecast?${params}`;
-
-    // Step 3: Fetch data from Open-Meteo API
-    console.log(`Fetching weather for ${cityName} from Open-Meteo...`);
-    const response = await fetch(apiUrl);
-
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
-    }
-
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
     const data = await response.json();
 
-    // Step 4: Transform API response to match our WeatherData structure
-    const weatherData: WeatherData = {
-      city: cityName,
-      latitude: latitude,
-      longitude: longitude,
-      timezone: data.timezone, // IANA timezone identifier from API
+    // Build hourly array — full 7 days worth, component picks current window
+    const hourly: HourlyForecast[] = data.hourly.time.map((t: string, i: number) => ({
+      time: t,
+      temperature: Math.round(data.hourly.temperature_2m[i]),
+      precipProbability: data.hourly.precipitation_probability[i] ?? 0,
+      weatherCode: data.hourly.weather_code[i],
+      condition: {
+        code: data.hourly.weather_code[i],
+        description: getWeatherDescription(data.hourly.weather_code[i]),
+      },
+    }));
 
-      // Current weather data
+    const forecast: DailyForecast[] = data.daily.time.map((date: string, i: number) => ({
+      date,
+      maxTemp: Math.round(data.daily.temperature_2m_max[i]),
+      minTemp: Math.round(data.daily.temperature_2m_min[i]),
+      precipProbability: data.daily.precipitation_probability_max[i] ?? 0,
+      condition: {
+        code: data.daily.weather_code[i],
+        description: getWeatherDescription(data.daily.weather_code[i]),
+      },
+    }));
+
+    return {
+      city: cityName,
+      latitude,
+      longitude,
+      timezone: data.timezone,
       current: {
-        temperature: Math.round(data.current.temperature_2m), // Round to whole number
-        feelsLike: Math.round(data.current.apparent_temperature), // "Feels like" temperature
-        humidity: data.current.relative_humidity_2m, // Humidity percentage
-        windSpeed: Math.round(data.current.wind_speed_10m), // Wind speed in mph
+        temperature: Math.round(data.current.temperature_2m),
+        feelsLike: Math.round(data.current.apparent_temperature),
+        humidity: data.current.relative_humidity_2m,
+        windSpeed: Math.round(data.current.wind_speed_10m),
         condition: {
-          code: data.current.weather_code, // WMO weather code
-          description: getWeatherDescription(data.current.weather_code), // Human-readable description
+          code: data.current.weather_code,
+          description: getWeatherDescription(data.current.weather_code),
         },
       },
-      
-      // 3-day forecast data
-      forecast: data.daily.time.map((date: string, index: number) => ({
-        date: date, // ISO date string (YYYY-MM-DD)
-        maxTemp: Math.round(data.daily.temperature_2m_max[index]), // High temp
-        minTemp: Math.round(data.daily.temperature_2m_min[index]), // Low temp
-        condition: {
-          code: data.daily.weather_code[index], // WMO weather code
-          description: getWeatherDescription(data.daily.weather_code[index]), // Description
-        },
-      })),
+      forecast,
+      hourly,
+      sunrise: data.daily.sunrise?.[0],
+      sunset: data.daily.sunset?.[0],
     };
-
-    console.log(`Successfully fetched weather for ${cityName}`);
-    return weatherData;
-
   } catch (error) {
-    console.error(`Error fetching weather by coordinates for ${cityName}:`, error);
+    console.error(`Error fetching weather for ${cityName}:`, error);
     return null;
   }
 }

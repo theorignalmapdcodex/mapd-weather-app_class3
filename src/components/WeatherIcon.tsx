@@ -1,70 +1,123 @@
-/**
- * Maps weather codes to appropriate weather icons
- * MODIFIED: Updated to use lucide-react icons instead of emojis for minimalistic theme
- * Used in: All Cities page and location-specific weather pages
- */
-
-// NEW: Import lucide-react icons for minimalistic design
-import { Cloud, CloudRain, Sun, CloudFog, CloudSnow, CloudDrizzle, CloudLightning } from "lucide-react";
+"use client";
 
 interface WeatherIconProps {
-  code: number;
-  size?: number; // MODIFIED: Changed from preset sizes to flexible pixel size
-  className?: string; // NEW: Added className prop for additional styling
+  /** WMO weather code OR CityCast condition key */
+  code?: number;
+  type?: 'sunny' | 'cloudy' | 'rain' | 'storm' | 'snow';
+  size?: number;
+  color?: string;
+  accent?: string;
+  night?: boolean;
+  className?: string;
 }
 
-// MODIFIED: Updated to use lucide-react icons with thin stroke weights for minimalistic aesthetic and colorful icons
-export function WeatherIcon({ code, size = 32, className = "" }: WeatherIconProps) {
-  // Base props for all icons
-  const baseProps = {
-    size,
-    strokeWidth: 1.5, // Thin strokes for elegant, minimal design
-  };
+function codeToType(code: number): 'sunny' | 'cloudy' | 'rain' | 'storm' | 'snow' {
+  if (code === 0 || code === 1) return 'sunny';
+  if (code === 2 || code === 3 || code === 45 || code === 48) return 'cloudy';
+  if (code >= 51 && code <= 67) return 'rain';
+  if (code >= 71 && code <= 86) return 'snow';
+  if (code >= 95) return 'storm';
+  return 'cloudy';
+}
 
-  // Helper function to determine which icon to render based on weather code
-  const getIcon = (code: number) => {
-    // Merge className with default color classes - className first so colors can override
-    const mergeClasses = (defaultColor: string) => {
-      // Remove any text-color classes from className to prevent conflicts
-      const filteredClassName = className.replace(/text-\w+-\d+/g, '').trim();
-      return `${defaultColor} ${filteredClassName}`;
-    };
+export function WeatherIcon({
+  code,
+  type,
+  size = 48,
+  color = 'currentColor',
+  accent = '#FF6B1A',
+  night = false,
+  className,
+}: WeatherIconProps) {
+  const s = size;
+  const stroke = Math.max(2, s * 0.055);
+  const t = type ?? (code !== undefined ? codeToType(code) : 'cloudy');
 
-    // Clear sky (code 0) - Bright yellow/amber for sunny
-    if (code === 0) return <Sun {...baseProps} className={mergeClasses("text-yellow-400")} />;
-
-    // Mainly clear (code 1) - Lighter yellow for mostly sunny
-    if (code === 1) return <Sun {...baseProps} className={mergeClasses("text-yellow-300")} />;
-
-    // Partly cloudy (code 2) - Light gray for clouds
-    if (code === 2) return <Cloud {...baseProps} className={mergeClasses("text-gray-400")} />;
-
-    // Overcast (code 3) - Darker gray for heavy clouds
-    if (code === 3) return <Cloud {...baseProps} className={mergeClasses("text-gray-500")} />;
-
-    // Fog (codes 45, 48) - Lighter gray for fog
-    if (code === 45 || code === 48) return <CloudFog {...baseProps} className={mergeClasses("text-gray-300")} />;
-
-    // Drizzle (codes 51-55) - Light blue for light rain
-    if (code >= 51 && code <= 55) return <CloudDrizzle {...baseProps} className={mergeClasses("text-blue-400")} />;
-
-    // Rain (codes 61-65) - Blue for rain
-    if (code >= 61 && code <= 65) return <CloudRain {...baseProps} className={mergeClasses("text-blue-500")} />;
-
-    // Rain showers (codes 80-82) - Darker blue for heavy rain
-    if (code >= 80 && code <= 82) return <CloudRain {...baseProps} className={mergeClasses("text-blue-600")} />;
-
-    // Snow (codes 71-77, 85-86) - Light blue/cyan for snow
-    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
-      return <CloudSnow {...baseProps} className={mergeClasses("text-cyan-300")} />;
+  if (t === 'sunny') {
+    if (night) {
+      return (
+        <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+          <path
+            d="M32 24a12 12 0 0 1-14.5-14 12 12 0 1 0 14.5 14Z"
+            fill={color} stroke={color} strokeWidth={stroke} strokeLinejoin="round"
+          />
+        </svg>
+      );
     }
+    return (
+      <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+        <circle cx="24" cy="24" r="9" fill={accent} stroke={color} strokeWidth={stroke} />
+        {[0, 45, 90, 135, 180, 225, 270, 315].map(a => {
+          const rad = (a * Math.PI) / 180;
+          return (
+            <line key={a}
+              x1={24 + Math.cos(rad) * 15} y1={24 + Math.sin(rad) * 15}
+              x2={24 + Math.cos(rad) * 20} y2={24 + Math.sin(rad) * 20}
+              stroke={color} strokeWidth={stroke} strokeLinecap="round"
+            />
+          );
+        })}
+      </svg>
+    );
+  }
 
-    // Thunderstorm (codes 95-99) - Purple for storms
-    if (code >= 95 && code <= 99) return <CloudLightning {...baseProps} className={mergeClasses("text-purple-500")} />;
+  if (t === 'cloudy') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+        <path
+          d="M14 32h22a6 6 0 0 0 0-12 5.5 5.5 0 0 0-1-.1A9 9 0 0 0 17 17a7 7 0 0 0-3 15Z"
+          fill="none" stroke={color} strokeWidth={stroke} strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
 
-    // Default fallback - generic cloud
-    return <Cloud {...baseProps} className={mergeClasses("text-gray-400")} />;
-  };
+  if (t === 'rain') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+        <path
+          d="M14 26h22a6 6 0 0 0 0-12 5.5 5.5 0 0 0-1-.1A9 9 0 0 0 17 11a7 7 0 0 0-3 15Z"
+          fill="none" stroke={color} strokeWidth={stroke} strokeLinejoin="round"
+        />
+        <line x1="17" y1="32" x2="14" y2="40" stroke={accent} strokeWidth={stroke} strokeLinecap="round" />
+        <line x1="25" y1="32" x2="22" y2="40" stroke={accent} strokeWidth={stroke} strokeLinecap="round" />
+        <line x1="33" y1="32" x2="30" y2="40" stroke={accent} strokeWidth={stroke} strokeLinecap="round" />
+      </svg>
+    );
+  }
 
-  return getIcon(code);
+  if (t === 'storm') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+        <path
+          d="M14 24h22a6 6 0 0 0 0-12 5.5 5.5 0 0 0-1-.1A9 9 0 0 0 17 9a7 7 0 0 0-3 15Z"
+          fill="none" stroke={color} strokeWidth={stroke} strokeLinejoin="round"
+        />
+        <path
+          d="M24 28l-5 9h5l-2 8 7-10h-5l3-7z"
+          fill={accent} stroke={color} strokeWidth={stroke * 0.7} strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+
+  if (t === 'snow') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 48 48" fill="none" className={className}>
+        <path
+          d="M14 26h22a6 6 0 0 0 0-12 5.5 5.5 0 0 0-1-.1A9 9 0 0 0 17 11a7 7 0 0 0-3 15Z"
+          fill="none" stroke={color} strokeWidth={stroke} strokeLinejoin="round"
+        />
+        {[16, 24, 32].map((x, i) => (
+          <g key={i} stroke={accent} strokeWidth={stroke} strokeLinecap="round">
+            <line x1={x} y1="33" x2={x} y2="39" />
+            <line x1={x - 2.5} y1="34.5" x2={x + 2.5} y2="37.5" />
+            <line x1={x + 2.5} y1="34.5" x2={x - 2.5} y2="37.5" />
+          </g>
+        ))}
+      </svg>
+    );
+  }
+
+  return null;
 }

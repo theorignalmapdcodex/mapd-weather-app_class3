@@ -1,294 +1,259 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useEffect, useState } from "react";
-import { notFound, useParams } from "next/navigation";
-import { getWeatherData } from "@/lib/getWeather";
-import { CITIES } from "@/data/cities";
-import { CurrentWeatherDetail } from "@/components/CurrentWeatherDetail";
-import { ForecastCard } from "@/components/ForecastCard";
-import { Button } from "@/components/ui/Button";
-// NEW: Import icons for minimalistic weather display
-import { Wind, Droplets, Cloud, Search, MapPin, Clock, CloudSun } from "lucide-react"; // MODIFIED: Added Search, MapPin, Clock and CloudSun icons
-// NEW: Import centralized WeatherIcon component for consistent icon display across pages
-import { WeatherIcon } from "@/components/WeatherIcon";
-import { DesktopNav } from "@/components/DesktopNav";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { TemperatureToggle } from "@/components/TemperatureToggle";
+import { useParams } from "next/navigation";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useTemperature } from "@/contexts/TemperatureContext";
-import type { WeatherData } from "@/types/weather";
+import { getWeatherByCoordinates } from "@/lib/getWeather";
+import { geocodeCity } from "@/lib/geocode";
+import { WeatherData } from "@/types/weather";
+import { weatherCodeToCondition, CONDITION_LABELS } from "@/lib/copy";
+import { Brand } from "@/components/Brand";
+import { WeatherIcon } from "@/components/WeatherIcon";
+import { CCCard } from "@/components/CCCard";
+import { MegaTemp } from "@/components/MegaTemp";
 import Link from "next/link";
 
-/**
- * Detailed Weather Page
- *
- * Dynamic route that displays comprehensive weather information
- * for a specific city including current conditions and forecast
- * MODIFIED: Updated with minimalistic, artistic theme to match All Cities page
- */
+const MONO = 'var(--font-jetbrains-mono), "JetBrains Mono", monospace';
+const DISPLAY = 'var(--font-syne), "Syne", system-ui';
+const BODY = 'var(--font-space-grotesk), "Space Grotesk", system-ui';
+
+function toC(f: number) { return Math.round((f - 32) * 5 / 9); }
+function disp(f: number, unit: string) { return unit === 'C' ? toC(f) : f; }
 
 export default function WeatherDetailPage() {
-  const params = useParams();
-  const { convertTemp, getUnitSymbol } = useTemperature();
+  const { location } = useParams<{ location: string }>();
+  const { theme, accent } = useTheme();
+  const { unit, toggleUnit } = useTemperature();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isNight, setIsNight] = useState(false);
 
-  const location = params.location as string;
-  const cityName = decodeURIComponent(location);
+  const cityName = decodeURIComponent(location ?? '').replace(/-/g, ' ');
 
   useEffect(() => {
-    // Validate city exists in our list
-    const cityExists = CITIES.some(
-      (c) => c.name.toLowerCase() === cityName.toLowerCase()
-    );
-
-    if (!cityExists) {
-      notFound();
-      return;
-    }
-
-    // Fetch weather data
-    const loadWeather = async () => {
-      setLoading(true);
-      const data = await getWeatherData(cityName);
-      setWeather(data);
+    const h = new Date().getHours();
+    setIsNight(h < 6 || h >= 20);
+    if (!cityName) return;
+    geocodeCity(cityName).then(geo => {
+      if (!geo) { setLoading(false); return; }
+      return getWeatherByCoordinates(geo.name, geo.latitude, geo.longitude);
+    }).then(data => {
+      if (data) setWeather(data);
       setLoading(false);
-    };
-
-    loadWeather();
+    });
   }, [cityName]);
 
+  const pageStyle = {
+    background: theme.bg, minHeight: '100dvh',
+    padding: '56px 16px 120px', color: theme.ink, fontFamily: BODY,
+  };
+
+  // ─── Loading ────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4">
-        <div className="text-center space-y-4">
-          <h1 className="text-3xl font-light text-gray-900 dark:text-white">Loading...</h1>
+      <div style={{ ...pageStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <Brand size={14} />
+        <div style={{ fontFamily: MONO, fontSize: 11, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', marginTop: 32 }}>
+          Loading {cityName}…
         </div>
+        <div style={{ width: 36, height: 36, borderRadius: 99, border: `3px solid ${theme.border}`, borderTopColor: accent, animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   if (!weather) {
     return (
-      // MODIFIED: Updated error state styling to match minimalistic theme
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4">
-        <div className="text-center space-y-4 bg-white dark:bg-gray-800 rounded-3xl p-12 shadow-sm">
-          <h1 className="text-3xl font-light text-gray-900 dark:text-white">
-            Weather data unavailable
-          </h1>
-          <Button href="/" variant="default">
-            Back to Home
-          </Button>
-        </div>
+      <div style={{ ...pageStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <Brand size={14} />
+        <div style={{ fontFamily: DISPLAY, fontSize: 32, fontWeight: 800, marginTop: 32 }}>City not found.</div>
+        <Link href="/" style={{ color: accent, fontFamily: MONO, fontSize: 12 }}>← Back home</Link>
       </div>
     );
   }
 
-  // Get current time in the city's timezone
-  const currentTime = new Date().toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: weather.timezone // Use the city's timezone from API
-  });
+  const condition = weatherCodeToCondition(weather.current.condition.code);
+  const conditionLabel = CONDITION_LABELS[condition];
+
+  // Find hourly window
+  const getHourlySlice = (count: number) => {
+    if (!weather.hourly?.length) return [];
+    try {
+      const localStr = new Date().toLocaleString('en-CA', {
+        timeZone: weather.timezone, hour12: false,
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit'
+      });
+      const currentHour = localStr.replace(', ', 'T').slice(0, 13);
+      let idx = weather.hourly.findIndex(h => h.time.slice(0, 13) === currentHour);
+      if (idx < 0) idx = 0;
+      return weather.hourly.slice(idx, idx + count);
+    } catch { return weather.hourly.slice(0, count); }
+  };
+
+  const hourly = getHourlySlice(24);
+  const maxT = hourly.length ? Math.max(...hourly.map(h => h.temperature)) : 80;
+  const minT = hourly.length ? Math.min(...hourly.map(h => h.temperature)) : 50;
+  const rngT = maxT - minT || 1;
+
+  const formatHourLabel = (time: string, index: number) => {
+    if (index === 0) return 'NOW';
+    try {
+      const d = new Date(time + ':00');
+      return d.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }).replace(' ', '');
+    } catch { return time.slice(11, 16); }
+  };
+
+  const formatTime = (iso?: string) => {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }
+    catch { return '—'; }
+  };
 
   return (
-    // MODIFIED: Changed background to match All Cities gradient theme
-    // Added pb-24 for bottom navigation spacing on mobile only
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 py-12 pb-24 md:pb-12">
-      <main className="max-w-5xl mx-auto space-y-8">
-
-        {/* NEW: Top navigation with Home icon and toggles */}
-        <div className="flex justify-between items-center mb-4">
-          {/* Home button with logo - navigate to homepage */}
-          <Link
-            href="/"
-            className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group"
-            title="Go to Home"
-          >
-            <img
-              src="/city-images/weather-app_logo.png"
-              alt="Home"
-              className="w-6 h-6 transition-transform group-hover:scale-110"
-            />
-            <span className="text-sm font-light text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white hidden sm:inline">
-              Home
-            </span>
+    <div style={pageStyle}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <Brand size={14} />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'inline-flex', background: theme.chip, borderRadius: 999, padding: 2, fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>
+            {(['F', 'C'] as const).map(u => (
+              <div key={u} onClick={() => { if ((unit === 'F') !== (u === 'F')) toggleUnit(); }} style={{
+                padding: '4px 10px', borderRadius: 999, cursor: 'pointer',
+                background: unit === u ? theme.chipText : 'transparent',
+                color: unit === u ? theme.chip : theme.chipText,
+                transition: 'all 0.15s',
+              }}>{u}°</div>
+            ))}
+          </div>
+          <Link href="/" style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 0.5, textDecoration: 'none', padding: '6px 10px', borderRadius: 99, border: `1px solid ${theme.border}` }}>
+            ← HOME
           </Link>
+        </div>
+      </div>
 
-          {/* Toggle controls */}
-          <div className="flex gap-3">
-            <ThemeToggle />
-            <TemperatureToggle />
+      {/* Sub-label + title */}
+      <div style={{ fontFamily: MONO, fontSize: 11, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase' }}>
+        Detailed forecast
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontSize: 'clamp(36px, 10vw, 52px)', fontWeight: 800, letterSpacing: -1.5, lineHeight: 1, marginTop: 6, marginBottom: 4 }}>
+        {weather.city}.
+      </div>
+      <div style={{ color: theme.mute, fontSize: 13, marginBottom: 24 }}>
+        {weather.latitude.toFixed(2)}°N, {Math.abs(weather.longitude).toFixed(2)}°W
+        {weather.sunrise && ` · Sunrise ${formatTime(weather.sunrise)}`}
+      </div>
+
+      {/* Current big card */}
+      <CCCard style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, flexWrap: 'nowrap', minWidth: 0 }}>
+          <MegaTemp value={disp(weather.current.temperature, unit)} unit={unit} />
+          <div style={{ marginTop: 8, flexShrink: 0 }}>
+            <WeatherIcon type={condition} night={isNight} size={56} color={theme.ink} accent={accent} />
           </div>
         </div>
-
-        {/* MODIFIED: Updated header with minimalistic styling */}
-        <div className="flex items-center justify-between mb-12">
-          <div>
-            <h1 className="text-5xl md:text-6xl font-light tracking-tight text-gray-900 dark:text-white mb-2">
-              {weather.city}
-            </h1>
-            {/* NEW: Added coordinates display matching All Cities style */}
-            <p className="text-gray-600 dark:text-gray-400 text-sm font-light">
-              {weather.latitude.toFixed(2)}°, {weather.longitude.toFixed(2)}°
-            </p>
-            {/* Current Time */}
-            <div className="flex items-center gap-1.5 mt-2">
-              <Clock size={16} className="text-gray-600 dark:text-gray-400" strokeWidth={1.5} />
-              <span className="text-gray-600 dark:text-gray-400 text-sm font-light">
-                {currentTime}
-              </span>
-            </div>
-          </div>
-          {/* MODIFIED: Updated back button styling */}
-          <Button href="/" variant="ghost" className="font-light">
-            ← Back
-          </Button>
+        <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 22, letterSpacing: -0.5, marginTop: 8, marginBottom: 4 }}>{conditionLabel}.</div>
+        <div style={{ display: 'flex', gap: 16, fontFamily: MONO, fontSize: 12, flexWrap: 'wrap' }}>
+          <span><span style={{ color: theme.mute }}>FEELS </span><b>{disp(weather.current.feelsLike, unit)}°</b></span>
+          <span><span style={{ color: theme.mute }}>WIND </span><b>{weather.current.windSpeed}mph</b></span>
+          <span><span style={{ color: theme.mute }}>HUMIDITY </span><b>{weather.current.humidity}%</b></span>
         </div>
+      </CCCard>
 
-        {/* NEW: Current Weather Card - Minimalistic design matching All Cities page */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-10 md:p-12 shadow-sm border border-gray-100 dark:border-gray-700">
-
-          {/* NEW: Current temperature display with icon */}
-          <div className="flex items-start justify-between mb-10">
-            <div>
-              {/* Large temperature display */}
-              <div className="text-8xl md:text-9xl font-light mb-3 text-gray-900 dark:text-white">
-                {Math.round(convertTemp(weather.current.temperature))}{getUnitSymbol()}
-              </div>
-              {/* Feels like temperature */}
-              <div className="text-gray-700 dark:text-gray-300 text-xl font-light mb-4">
-                Feels like {Math.round(convertTemp(weather.current.feelsLike))}{getUnitSymbol()}
-              </div>
-              {/* Weather condition description */}
-              <div className="text-2xl text-gray-700 dark:text-gray-300 font-light">
-                {weather.current.condition.description}
-              </div>
-            </div>
-            {/* Weather icon on the right */}
-            <div className="mt-4">
-              <WeatherIcon code={weather.current.condition.code} size={80} />
-            </div>
+      {/* 48-hour chart + list */}
+      {hourly.length > 0 && (
+        <CCCard style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>
+            48-hour forecast
           </div>
-
-          {/* NEW: Weather metrics grid - minimalistic style */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 pt-8 border-t border-gray-100 dark:border-gray-700">
-            
-            {/* Wind speed metric */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                <Wind size={20} strokeWidth={1.5} />
-                <span className="text-sm font-light uppercase tracking-wide">Wind</span>
-              </div>
-              <div className="text-3xl font-light text-gray-900 dark:text-white">
-                {weather.current.windSpeed} <span className="text-xl text-gray-700 dark:text-gray-300">mph</span>
-              </div>
-            </div>
-
-            {/* Humidity metric */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                <Droplets size={20} strokeWidth={1.5} />
-                <span className="text-sm font-light uppercase tracking-wide">Humidity</span>
-              </div>
-              <div className="text-3xl font-light text-gray-900 dark:text-white">
-                {weather.current.humidity}<span className="text-xl text-gray-700 dark:text-gray-300">%</span>
-              </div>
-            </div>
-
-            {/* Condition code (for reference) */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                <Cloud size={20} strokeWidth={1.5} />
-                <span className="text-sm font-light uppercase tracking-wide">Condition</span>
-              </div>
-              <div className="text-3xl font-light text-gray-900 dark:text-white">
-                {weather.current.condition.code}
-              </div>
-            </div>
-
+          {/* SVG chart */}
+          <div style={{ marginBottom: 12 }}>
+            <svg width="100%" height="90" viewBox="0 0 340 90" preserveAspectRatio="none" style={{ display: 'block' }}>
+              <defs>
+                <linearGradient id="hGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={accent} stopOpacity="0.3" />
+                  <stop offset="100%" stopColor={accent} stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {(() => {
+                const slice = hourly.slice(0, 12);
+                const pts = slice.map((h, i) => {
+                  const x = (i / (slice.length - 1)) * 340;
+                  const y = 75 - ((h.temperature - minT) / rngT) * 60;
+                  return [x, y];
+                });
+                const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ');
+                return (
+                  <g>
+                    <path d={`${path} L340,90 L0,90 Z`} fill="url(#hGrad)" />
+                    <path d={path} fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    {pts.map(([x, y], i) => (
+                      <circle key={i} cx={x} cy={y} r="3" fill={theme.bg} stroke={accent} strokeWidth="2" />
+                    ))}
+                  </g>
+                );
+              })()}
+            </svg>
           </div>
-        </div>
-
-        {/* NEW: 3-Day Forecast - Minimalistic card design */}
-        <div className="bg-white dark:bg-gray-800 rounded-3xl p-10 shadow-sm border border-gray-100 dark:border-gray-700">
-          <h2 className="text-3xl font-light mb-8 text-gray-900 dark:text-white">3-Day Forecast</h2>
-
-          {/* Forecast grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {weather.forecast.map((day, idx) => (
-              <div
-                key={idx}
-                className="p-6 rounded-2xl bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-              >
-                {/* Day label */}
-                <div className="text-sm font-light text-gray-700 dark:text-gray-300 mb-4 uppercase tracking-wide">
-                  {idx === 0 ? "Tomorrow" : new Date(day.date).toLocaleDateString('en-US', { weekday: 'long' })}
-                </div>
-                
-                {/* Weather icon centered */}
-                <div className="flex justify-center mb-4">
-                  <WeatherIcon code={day.condition.code} size={48} />
-                </div>
-
-                {/* Condition description */}
-                <div className="text-center text-gray-700 dark:text-gray-300 font-light mb-4">
-                  {day.condition.description}
-                </div>
-
-                {/* Temperature range */}
-                <div className="text-center">
-                  <span className="text-3xl font-light text-gray-900 dark:text-white">
-                    {Math.round(convertTemp(day.maxTemp))}{getUnitSymbol()}
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-500 mx-2 text-xl">/</span>
-                  <span className="text-2xl font-light text-gray-700 dark:text-gray-300">
-                    {Math.round(convertTemp(day.minTemp))}{getUnitSymbol()}
-                  </span>
+          {/* Scrollable hourly list */}
+          <div className="scroll-x" style={{ display: 'flex', gap: 0 }}>
+            {hourly.slice(0, 12).map((h, i) => (
+              <div key={i} style={{
+                minWidth: 56, textAlign: 'center', padding: '8px 4px',
+                borderLeft: i > 0 ? `1px solid ${theme.border}` : 'none',
+                flexShrink: 0,
+              }}>
+                <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, marginBottom: 6 }}>{formatHourLabel(h.time, i)}</div>
+                <WeatherIcon code={h.weatherCode} size={20} color={theme.ink} accent={accent} night={isNight && i < 4} />
+                <div style={{ fontFamily: DISPLAY, fontSize: 16, fontWeight: 700, marginTop: 6 }}>{disp(h.temperature, unit)}°</div>
+                <div style={{ fontFamily: MONO, fontSize: 9, color: h.precipProbability > 30 ? accent : theme.muter, fontWeight: 600, marginTop: 2 }}>
+                  {h.precipProbability}%
                 </div>
               </div>
             ))}
           </div>
+        </CCCard>
+      )}
+
+      {/* 7-day */}
+      <CCCard noPad style={{ marginBottom: 12 }}>
+        <div style={{ padding: '14px 16px', fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', borderBottom: `1px solid ${theme.border}` }}>
+          7-day outlook
         </div>
-
-        {/* MODIFIED: Updated action buttons with icons and minimalistic styling */}
-        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-          {/* NEW: Search Another City button with icon */}
-          <Button 
-            href="/" 
-            variant="default" 
-            className="font-light px-8 py-4"
-            icon={<Search size={18} strokeWidth={2} />}
-            iconPosition="left"
-          >
-            Search Another City
-          </Button>
-          {/* NEW: View All Cities button with icon */}
-          <Button 
-            href="/weather/all-cities" 
-            variant="default" 
-            className="font-light px-8 py-4"
-            icon={<MapPin size={18} strokeWidth={2} />}
-            iconPosition="left"
-          >
-            View All Cities
-          </Button>
-        </div>
-
-        {/* NEW: Desktop navigation - appears before footer on desktop only */}
-        <div className="mt-12">
-          <DesktopNav />
-        </div>
-
-                {/* NEW: Footer - adjusted for bottom nav */}
-        <footer className="mt-8 mb-4 text-center">
-          <p className="text-gray-700 dark:text-gray-400 text-sm font-light">
-            Made with 🖤 by @theoriginalmapd
-          </p>
-        </footer>
-
-      </main>
+        {(() => {
+          const hiAll = weather.forecast.map(d => d.maxTemp);
+          const loAll = weather.forecast.map(d => d.minTemp);
+          const mxH = Math.max(...hiAll);
+          const mnL = Math.min(...loAll);
+          const rng = mxH - mnL || 1;
+          return weather.forecast.map((day, i) => {
+            const label = i === 0 ? 'Today' : new Date(day.date + 'T12:00').toLocaleDateString('en-US', { weekday: 'short' });
+            const hiPct = ((day.maxTemp - mnL) / rng) * 100;
+            const loPct = ((day.minTemp - mnL) / rng) * 100;
+            return (
+              <div key={i} style={{ padding: '16px', borderTop: i > 0 ? `1px solid ${theme.border}` : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <div style={{ width: 44, fontWeight: 700, fontSize: 14, fontFamily: BODY }}>{label}</div>
+                  <WeatherIcon code={day.condition.code} size={24} color={theme.ink} accent={accent} />
+                  <div style={{ fontFamily: MONO, fontSize: 10, color: day.precipProbability > 30 ? accent : theme.muter, fontWeight: 700, width: 28 }}>
+                    {day.precipProbability}%
+                  </div>
+                  <div style={{ flex: 1 }} />
+                  <div style={{ fontFamily: DISPLAY, fontSize: 16, fontWeight: 700, color: theme.mute, width: 36, textAlign: 'right' }}>
+                    {disp(day.minTemp, unit)}°
+                  </div>
+                  <div style={{ fontFamily: DISPLAY, fontSize: 18, fontWeight: 800, width: 36, textAlign: 'right' }}>
+                    {disp(day.maxTemp, unit)}°
+                  </div>
+                </div>
+                <div style={{ height: 5, background: theme.border, borderRadius: 99, position: 'relative' }}>
+                  <div style={{ position: 'absolute', left: `${loPct}%`, right: `${100 - hiPct}%`, top: 0, bottom: 0, background: accent, borderRadius: 99 }} />
+                </div>
+              </div>
+            );
+          });
+        })()}
+      </CCCard>
     </div>
   );
 }

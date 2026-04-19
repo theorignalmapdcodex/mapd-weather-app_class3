@@ -2,75 +2,113 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-type Theme = "light" | "dark";
+export const THEMES = {
+  cream: {
+    bg: '#EEE7DB', bgAlt: '#E2D9C7', card: '#F5F0E6', cardAlt: '#FFFFFF',
+    ink: '#1A1A1A', mute: 'rgba(26,26,26,0.55)', muter: 'rgba(26,26,26,0.25)',
+    border: 'rgba(26,26,26,0.08)', chip: '#1A1A1A', chipText: '#EEE7DB',
+  },
+  dark: {
+    bg: '#141414', bgAlt: '#1E1E1E', card: '#1E1E1E', cardAlt: '#2A2A2A',
+    ink: '#F3EEE3', mute: 'rgba(243,238,227,0.6)', muter: 'rgba(243,238,227,0.25)',
+    border: 'rgba(243,238,227,0.1)', chip: '#F3EEE3', chipText: '#141414',
+  },
+  pastel: {
+    bg: '#E8E4F3', bgAlt: '#DDD8EB', card: '#F2EFFA', cardAlt: '#FFFFFF',
+    ink: '#231C3D', mute: 'rgba(35,28,61,0.55)', muter: 'rgba(35,28,61,0.25)',
+    border: 'rgba(35,28,61,0.08)', chip: '#231C3D', chipText: '#E8E4F3',
+  },
+} as const;
+
+export const ACCENTS = {
+  orange: '#FF6B1A',
+  coral: '#F25D5D',
+  lime: '#B8D94B',
+  violet: '#7B5CE6',
+  sky: '#3BA0E5',
+} as const;
+
+export type ThemeKey = keyof typeof THEMES;
+export type AccentKey = keyof typeof ACCENTS;
+export type Personality = 'witty' | 'warm' | 'data';
+export type ThemeTokens = (typeof THEMES)[ThemeKey];
 
 interface ThemeContextType {
-  theme: Theme;
+  themeKey: ThemeKey;
+  accentKey: AccentKey;
+  personality: Personality;
+  theme: ThemeTokens;
+  accent: string;
+  setThemeKey: (k: ThemeKey) => void;
+  setAccentKey: (k: AccentKey) => void;
+  setPersonality: (p: Personality) => void;
   toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const DEFAULT_THEME: ThemeTokens = THEMES.cream;
+const DEFAULT_ACCENT = ACCENTS.orange;
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [themeKey, setThemeKeyState] = useState<ThemeKey>('cream');
+  const [accentKey, setAccentKeyState] = useState<AccentKey>('orange');
+  const [personality, setPersonalityState] = useState<Personality>('witty');
   const [mounted, setMounted] = useState(false);
 
-  // Load theme from localStorage on mount
   useEffect(() => {
     setMounted(true);
-    const savedTheme = localStorage.getItem("theme") as Theme | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-    // Default is light - don't check system preference
+    const tk = localStorage.getItem('cc-theme') as ThemeKey | null;
+    const ak = localStorage.getItem('cc-accent') as AccentKey | null;
+    const pk = localStorage.getItem('cc-personality') as Personality | null;
+    if (tk && THEMES[tk]) setThemeKeyState(tk);
+    if (ak && ACCENTS[ak]) setAccentKeyState(ak);
+    if (pk && ['witty', 'warm', 'data'].includes(pk)) setPersonalityState(pk);
   }, []);
 
-  // Update HTML class when theme changes (immediately, not waiting for mount)
-  useEffect(() => {
-    const root = document.documentElement;
-    console.log("Theme changed to:", theme);
-    console.log("HTML element classes before:", root.className);
-
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-
-    console.log("HTML element classes after:", root.className);
-
-    // Only save to localStorage after mounting to avoid SSR issues
-    if (mounted) {
-      localStorage.setItem("theme", theme);
-      console.log("Saved theme to localStorage:", theme);
-    }
-  }, [theme, mounted]);
-
-  const toggleTheme = () => {
-    console.log("Toggle theme clicked!");
-    setTheme((prev) => {
-      const newTheme = prev === "light" ? "dark" : "light";
-      console.log("Changing theme from", prev, "to", newTheme);
-      return newTheme;
-    });
+  const setThemeKey = (k: ThemeKey) => {
+    setThemeKeyState(k);
+    if (mounted) localStorage.setItem('cc-theme', k);
   };
 
-  // Always provide the context, even before mounting
+  const setAccentKey = (k: AccentKey) => {
+    setAccentKeyState(k);
+    if (mounted) localStorage.setItem('cc-accent', k);
+  };
+
+  const setPersonality = (p: Personality) => {
+    setPersonalityState(p);
+    if (mounted) localStorage.setItem('cc-personality', p);
+  };
+
+  const toggleTheme = () => setThemeKey(themeKey === 'dark' ? 'cream' : 'dark');
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{
+      themeKey, accentKey, personality,
+      theme: THEMES[themeKey],
+      accent: ACCENTS[accentKey],
+      setThemeKey, setAccentKey, setPersonality,
+      toggleTheme,
+    }}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    // Return default values during SSR instead of throwing
-    if (typeof window === "undefined") {
-      return { theme: "light" as Theme, toggleTheme: () => {} };
+  const ctx = useContext(ThemeContext);
+  if (!ctx) {
+    if (typeof window === 'undefined') {
+      return {
+        themeKey: 'cream' as ThemeKey, accentKey: 'orange' as AccentKey,
+        personality: 'witty' as Personality,
+        theme: DEFAULT_THEME, accent: DEFAULT_ACCENT,
+        setThemeKey: () => {}, setAccentKey: () => {},
+        setPersonality: () => {}, toggleTheme: () => {},
+      };
     }
-    throw new Error("useTheme must be used within a ThemeProvider");
+    throw new Error('useTheme must be used within ThemeProvider');
   }
-  return context;
+  return ctx;
 }
