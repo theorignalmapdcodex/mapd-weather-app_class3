@@ -90,7 +90,7 @@ const STATIC_TABS = [
   },
   {
     href: "/plan",
-    label: "Plan",
+    label: "Tasks",
     icon: (c: string) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
         <line x1="4" y1="7" x2="20" y2="7" stroke={c} strokeWidth="1.8" strokeLinecap="round" />

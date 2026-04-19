@@ -261,8 +261,8 @@ export default function PlacesPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{
-                      fontFamily: DISPLAY, fontWeight: 800, fontSize: 20,
-                      letterSpacing: -0.5, lineHeight: 1,
+                      fontFamily: DISPLAY, fontWeight: 800, fontSize: 'clamp(13px, 3.8vw, 16px)',
+                      letterSpacing: -0.5, lineHeight: 1.1,
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>
                       {city.name}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTemperature } from "@/contexts/TemperatureContext";
 import { useWeather } from "@/contexts/WeatherContext";
-import { useTasks, formatTime } from "@/contexts/TaskContext";
+import { useTasks, formatTime, todayStr, Task, TaskUpdates } from "@/contexts/TaskContext";
 import { CCHeader } from "@/components/CCHeader";
 import { WeatherIcon } from "@/components/WeatherIcon";
 import { weatherCodeToCondition } from "@/lib/copy";
@@ -18,21 +18,35 @@ const BODY = 'var(--font-space-grotesk), "Space Grotesk", system-ui';
 function toC(f: number) { return Math.round((f - 32) * 5 / 9); }
 function displayTemp(f: number, unit: string) { return unit === 'C' ? toC(f) : f; }
 
-// 15-minute increment time options (96 slots across 24h)
-const TIME_OPTIONS = Array.from({ length: 96 }, (_, i) => {
-  const totalMins = i * 15;
-  const hour = Math.floor(totalMins / 60);
-  const minute = totalMins % 60;
-  return { value: i, label: formatTime(hour, minute), hour, minute };
-});
+// Parse "HH:MM" (native time input value) → { hour, minute } snapped to 15min
+function parseTimeInput(val: string): { hour: number; minute: number } {
+  const [h, m] = val.split(':').map(Number);
+  const snapped = Math.round((m ?? 0) / 15) * 15;
+  return { hour: h ?? 9, minute: snapped >= 60 ? 0 : snapped };
+}
+
+function toTimeInputValue(hour: number, minute: number) {
+  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+}
+
+// Minimum date string for the date input (today)
+function minDate() { return todayStr(); }
+
+function friendlyDate(dateStr: string) {
+  const today = todayStr();
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  if (dateStr === today) return 'Today';
+  if (dateStr === tomorrow) return 'Tomorrow';
+  return new Date(dateStr + 'T12:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
 
 const WINDOWS = [
-  { label: 'Morning', start: 6, end: 9, time: '6–9 AM' },
-  { label: 'Mid-morning', start: 9, end: 12, time: '9 AM–12 PM' },
-  { label: 'Afternoon', start: 12, end: 15, time: '12–3 PM' },
-  { label: 'Late PM', start: 15, end: 18, time: '3–6 PM' },
-  { label: 'Evening', start: 18, end: 21, time: '6–9 PM' },
-  { label: 'Night', start: 21, end: 24, time: '9–11 PM' },
+  { label: 'Morning',    start: 6,  end: 9,  time: '6–9 AM' },
+  { label: 'Mid-morning',start: 9,  end: 12, time: '9 AM–12 PM' },
+  { label: 'Afternoon',  start: 12, end: 15, time: '12–3 PM' },
+  { label: 'Late PM',    start: 15, end: 18, time: '3–6 PM' },
+  { label: 'Evening',    start: 18, end: 21, time: '6–9 PM' },
+  { label: 'Night',      start: 21, end: 24, time: '9–11 PM' },
 ];
 
 function getWindowStatus(start: number, end: number, hourly: HourlyForecast[]) {
@@ -47,7 +61,7 @@ function getWindowStatus(start: number, end: number, hourly: HourlyForecast[]) {
   return 'good';
 }
 
-function getHourStatus(hour: number, minute: number, hourly: HourlyForecast[]) {
+function getHourStatus(hour: number, hourly: HourlyForecast[]) {
   const h = hourly.find(h => new Date(h.time + ':00').getHours() === hour);
   if (!h) return 'good';
   if (h.precipProbability > 60 || h.weatherCode >= 95) return 'reschedule';
@@ -56,21 +70,109 @@ function getHourStatus(hour: number, minute: number, hourly: HourlyForecast[]) {
 }
 
 const STATUS = {
-  good:      { bg: '#4CAF50', label: 'GOOD' },
-  'heads-up':{ bg: '#FF9800', label: 'HEADS UP' },
-  inside:    { bg: '#EF5350', label: 'STAY IN' },
-  reschedule:{ bg: '#EF5350', label: 'RESCHEDULE?' },
-  overdue:   { bg: '#EF5350', label: 'OVERDUE' },
+  good:       { bg: '#4CAF50', label: 'GOOD' },
+  'heads-up': { bg: '#FF9800', label: 'HEADS UP' },
+  inside:     { bg: '#EF5350', label: 'STAY IN' },
+  reschedule: { bg: '#EF5350', label: 'RESCHEDULE?' },
+  overdue:    { bg: '#EF5350', label: 'OVERDUE' },
 };
 
-export default function PlanPage() {
+// ── Shared form component ─────────────────────────────────────
+function TaskForm({
+  initialLabel = '', initialTime = '09:00', initialDate = todayStr(),
+  onSave, onCancel, theme, accent, saveLabel = 'Add task →',
+}: {
+  initialLabel?: string; initialTime?: string; initialDate?: string;
+  onSave: (label: string, hour: number, minute: number, date: string) => void;
+  onCancel: () => void;
+  theme: ReturnType<typeof useTheme>['theme'];
+  accent: string;
+  saveLabel?: string;
+}) {
+  const [label, setLabel] = useState(initialLabel);
+  const [timeVal, setTimeVal] = useState(initialTime);
+  const [dateVal, setDateVal] = useState(initialDate);
+
+  const handleSave = () => {
+    if (!label.trim()) return;
+    const { hour, minute } = parseTimeInput(timeVal);
+    onSave(label.trim(), hour, minute, dateVal);
+  };
+
+  return (
+    <div style={{ background: theme.card, borderRadius: 18, padding: 16, border: `1px solid ${theme.border}` }}>
+      <input
+        value={label}
+        onChange={e => setLabel(e.target.value)}
+        placeholder="Task name…"
+        autoFocus
+        onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') onCancel(); }}
+        style={{
+          width: '100%', padding: '10px 14px', borderRadius: 999,
+          border: `1px solid ${theme.border}`, background: theme.bg,
+          color: theme.ink, fontSize: 15, fontFamily: BODY,
+          outline: 'none', boxSizing: 'border-box', marginBottom: 10,
+        }}
+      />
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        {/* Date picker */}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: MONO, fontSize: 9, color: theme.mute, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Date</div>
+          <input
+            type="date"
+            value={dateVal}
+            min={minDate()}
+            onChange={e => setDateVal(e.target.value)}
+            style={{
+              width: '100%', padding: '8px 12px', borderRadius: 12,
+              border: `1px solid ${theme.border}`, background: theme.bg,
+              color: theme.ink, fontSize: 13, fontFamily: MONO,
+              outline: 'none', boxSizing: 'border-box',
+            }}
+          />
+        </div>
+        {/* Time picker — native, shows as "9:00 AM" on mobile */}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: MONO, fontSize: 9, color: theme.mute, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Time</div>
+          <input
+            type="time"
+            step="900"
+            value={timeVal}
+            onChange={e => setTimeVal(e.target.value)}
+            style={{
+              width: '100%', padding: '8px 12px', borderRadius: 12,
+              border: `1px solid ${theme.border}`, background: theme.bg,
+              color: theme.ink, fontSize: 13, fontFamily: MONO,
+              outline: 'none', boxSizing: 'border-box',
+            }}
+          />
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button type="button" onClick={handleSave} style={{
+          flex: 1, padding: '10px 0', borderRadius: 999,
+          background: theme.ink, color: theme.bg, border: 'none',
+          cursor: 'pointer', fontFamily: DISPLAY, fontWeight: 700, fontSize: 14,
+        }}>{saveLabel}</button>
+        <button type="button" onClick={onCancel} style={{
+          padding: '10px 16px', borderRadius: 999,
+          background: 'transparent', color: theme.mute,
+          border: `1px solid ${theme.border}`, cursor: 'pointer',
+          fontFamily: MONO, fontSize: 12,
+        }}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+export default function TasksPage() {
   const { theme, accent } = useTheme();
   const { unit } = useTemperature();
   const { weather, loading } = useWeather();
-  const { todayTasks, overdueTasks, toggleComplete, removeTask, clearCompleted, addTask } = useTasks();
+  const { todayTasks, overdueTasks, toggleComplete, removeTask, clearCompleted, addTask, editTask } = useTasks();
   const [showAdd, setShowAdd] = useState(false);
-  const [newLabel, setNewLabel] = useState('');
-  const [timeIdx, setTimeIdx] = useState(36); // default 9:00 AM (index 36)
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const pageStyle = {
     background: theme.bg, minHeight: '100dvh',
@@ -112,17 +214,8 @@ export default function PlanPage() {
   const todayForecast = weather.forecast[0];
   const isNight = now.getHours() < 6 || now.getHours() >= 20;
   const completedCount = todayTasks.filter(t => t.completed).length;
-  const selectedTime = TIME_OPTIONS[timeIdx];
 
-  const handleAdd = () => {
-    if (!newLabel.trim()) return;
-    addTask(newLabel.trim(), selectedTime.hour, selectedTime.minute);
-    setNewLabel('');
-    setTimeIdx(36);
-    setShowAdd(false);
-  };
-
-  type TaggedTask = typeof todayTasks[0] & { _overdue: boolean };
+  type TaggedTask = Task & { _overdue: boolean };
   const allTasks: TaggedTask[] = [
     ...overdueTasks.map(t => ({ ...t, _overdue: true as const })),
     ...todayTasks
@@ -138,7 +231,7 @@ export default function PlanPage() {
         Today · Weather-Aware
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 'clamp(38px, 12vw, 56px)', letterSpacing: -2, lineHeight: 0.92, marginBottom: 12 }}>
-        Plan your<br />day.
+        Your tasks.
       </div>
       <div style={{ color: theme.mute, fontSize: 15, lineHeight: 1.45, marginBottom: 24, maxWidth: 320 }}>
         We cross-check your tasks against the sky.
@@ -168,17 +261,10 @@ export default function PlanPage() {
           const s = STATUS[status] || STATUS.good;
           const wHour = hourly.find(h => new Date(h.time + ':00').getHours() === w.start);
           return (
-            <div key={w.time} style={{
-              background: `${s.bg}12`, borderRadius: 14, padding: '10px 12px',
-              border: `1.5px solid ${s.bg}35`,
-            }}>
-              <div style={{ fontFamily: BODY, fontSize: 12, fontWeight: 600, color: theme.ink, marginBottom: 3 }}>{w.label}</div>
+            <div key={w.time} style={{ background: `${s.bg}12`, borderRadius: 14, padding: '10px 12px', border: `1.5px solid ${s.bg}35` }}>
+              <div style={{ fontFamily: BODY, fontSize: 12, fontWeight: 600, color: theme.ink, marginBottom: 2 }}>{w.label}</div>
               <div style={{ fontFamily: MONO, fontSize: 9, color: theme.mute, marginBottom: 6 }}>{w.time}</div>
-              <div style={{
-                display: 'inline-block', fontFamily: MONO, fontSize: 8, fontWeight: 700,
-                letterSpacing: 0.3, textTransform: 'uppercase', color: s.bg,
-                background: `${s.bg}22`, borderRadius: 99, padding: '2px 6px',
-              }}>
+              <div style={{ display: 'inline-block', fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase', color: s.bg, background: `${s.bg}22`, borderRadius: 99, padding: '2px 6px' }}>
                 {s.label}
               </div>
               {wHour && (
@@ -206,7 +292,7 @@ export default function PlanPage() {
               padding: '4px 10px', cursor: 'pointer', textTransform: 'uppercase',
             }}>Clear done</button>
           )}
-          <button type="button" onClick={() => setShowAdd(s => !s)} style={{
+          <button type="button" onClick={() => { setShowAdd(s => !s); setEditingId(null); }} style={{
             width: 32, height: 32, borderRadius: 999, background: accent,
             border: 'none', cursor: 'pointer', color: theme.bg,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -217,44 +303,17 @@ export default function PlanPage() {
 
       {/* Add task form */}
       {showAdd && (
-        <div style={{ background: theme.card, borderRadius: 18, padding: 16, marginBottom: 14, border: `1px solid ${theme.border}` }}>
-          <input
-            value={newLabel}
-            onChange={e => setNewLabel(e.target.value)}
-            placeholder="Task name…"
-            autoFocus
-            onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
-            style={{
-              width: '100%', padding: '10px 14px', borderRadius: 999,
-              border: `1px solid ${theme.border}`, background: theme.bg,
-              color: theme.ink, fontSize: 15, fontFamily: BODY,
-              outline: 'none', boxSizing: 'border-box', marginBottom: 12,
+        <div style={{ marginBottom: 14 }}>
+          <TaskForm
+            theme={theme}
+            accent={accent}
+            onSave={(label, hour, minute, date) => {
+              addTask(label, hour, minute, date);
+              setShowAdd(false);
             }}
+            onCancel={() => setShowAdd(false)}
+            saveLabel="Add task →"
           />
-          {/* 15-min time picker */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: 0.5 }}>Time</div>
-            <select
-              aria-label="Task time"
-              value={timeIdx}
-              onChange={e => setTimeIdx(Number(e.target.value))}
-              style={{
-                flex: 1, padding: '8px 12px', borderRadius: 999,
-                border: `1px solid ${theme.border}`, background: theme.bg,
-                color: theme.ink, fontSize: 14, fontFamily: MONO,
-                outline: 'none', cursor: 'pointer',
-              }}
-            >
-              {TIME_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-          <button type="button" onClick={handleAdd} style={{
-            width: '100%', padding: 12, borderRadius: 999,
-            background: theme.ink, color: theme.bg, border: 'none',
-            cursor: 'pointer', fontFamily: DISPLAY, fontWeight: 700, fontSize: 14,
-          }}>Add task →</button>
         </div>
       )}
 
@@ -266,35 +325,50 @@ export default function PlanPage() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {allTasks.map(task => {
-            const isOverdue = '_overdue' in task && task._overdue;
-            const weatherStatus = isOverdue ? 'overdue' : getHourStatus(task.hour, task.minute, hourly);
+            const isOverdue = task._overdue;
+            const weatherStatus = isOverdue ? 'overdue' : getHourStatus(task.hour, hourly);
             const s = STATUS[weatherStatus] || STATUS.good;
             const taskHourly = hourly.find(h => new Date(h.time + ':00').getHours() === task.hour);
             const code = taskHourly?.weatherCode ?? 0;
+            const isEditing = editingId === task.id;
+
+            if (isEditing) {
+              return (
+                <div key={task.id}>
+                  <TaskForm
+                    theme={theme}
+                    accent={accent}
+                    initialLabel={task.label}
+                    initialTime={toTimeInputValue(task.hour, task.minute)}
+                    initialDate={task.date}
+                    saveLabel="Save changes →"
+                    onSave={(label, hour, minute, date) => {
+                      editTask(task.id, { label, hour, minute, date } as TaskUpdates);
+                      setEditingId(null);
+                    }}
+                    onCancel={() => setEditingId(null)}
+                  />
+                </div>
+              );
+            }
 
             return (
               <div key={task.id} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
+                display: 'flex', alignItems: 'center', gap: 10,
                 background: task.completed ? `${theme.card}80` : theme.card,
-                borderRadius: 16, padding: '14px 16px',
-                border: isOverdue
-                  ? `1.5px solid ${s.bg}40`
-                  : `1px solid ${theme.border}`,
+                borderRadius: 16, padding: '12px 14px',
+                border: isOverdue ? `1.5px solid ${s.bg}40` : `1px solid ${theme.border}`,
                 opacity: task.completed ? 0.65 : 1,
                 transition: 'opacity 0.2s',
               }}>
                 {/* Checkbox */}
-                <button
-                  type="button"
-                  onClick={() => toggleComplete(task.id)}
-                  style={{
-                    width: 22, height: 22, borderRadius: 999, flexShrink: 0,
-                    border: `2px solid ${task.completed ? accent : theme.muter}`,
-                    background: task.completed ? accent : 'transparent',
-                    cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
+                <button type="button" onClick={() => toggleComplete(task.id)} style={{
+                  width: 22, height: 22, borderRadius: 999, flexShrink: 0,
+                  border: `2px solid ${task.completed ? accent : theme.muter}`,
+                  background: task.completed ? accent : 'transparent',
+                  cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }} aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}>
                   {task.completed && (
                     <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
                       <path d="M2 6l3 3 5-5" stroke={theme.bg} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -302,49 +376,48 @@ export default function PlanPage() {
                   )}
                 </button>
 
-                {/* Label + time */}
+                {/* Label + meta */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontFamily: BODY, fontSize: 15, fontWeight: 600, color: theme.ink,
+                    fontFamily: BODY, fontSize: 14, fontWeight: 600, color: theme.ink,
                     textDecoration: task.completed ? 'line-through' : 'none',
                     textDecorationColor: theme.muter,
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}>{task.label}</div>
-                  <div style={{ fontFamily: MONO, fontSize: 11, color: theme.mute, marginTop: 2 }}>
-                    {formatTime(task.hour, task.minute)}
-                    {isOverdue && <span style={{ color: s.bg, marginLeft: 6 }}>· yesterday</span>}
-                    {task.completed && task.completedAt && (
-                      <span style={{ color: theme.muter, marginLeft: 6 }}>· done</span>
-                    )}
+                  <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, marginTop: 2 }}>
+                    {friendlyDate(task.date)} · {formatTime(task.hour, task.minute)}
+                    {isOverdue && <span style={{ color: s.bg, marginLeft: 4 }}>· overdue</span>}
                   </div>
                 </div>
 
                 {/* Weather icon */}
-                {!task.completed && <WeatherIcon code={code} size={20} color={theme.ink} accent={accent} />}
+                {!task.completed && <WeatherIcon code={code} size={18} color={theme.ink} accent={accent} />}
 
                 {/* Status badge */}
                 {!task.completed && (
                   <div style={{
-                    fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
+                    fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: 0.3,
                     textTransform: 'uppercase', color: s.bg,
-                    background: `${s.bg}18`, borderRadius: 99, padding: '3px 8px',
+                    background: `${s.bg}18`, borderRadius: 99, padding: '3px 7px',
                     whiteSpace: 'nowrap', flexShrink: 0,
-                  }}>
-                    {s.label}
-                  </div>
+                  }}>{s.label}</div>
+                )}
+
+                {/* Edit button */}
+                {!task.completed && (
+                  <button type="button" onClick={() => { setEditingId(task.id); setShowAdd(false); }}
+                    style={{ width: 28, height: 28, borderRadius: 99, background: theme.bgAlt, border: `1px solid ${theme.border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+                    aria-label="Edit task">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <path d="M11 2l3 3L5 14H2v-3L11 2Z" stroke={theme.mute} strokeWidth="1.5" strokeLinejoin="round" />
+                    </svg>
+                  </button>
                 )}
 
                 {/* Remove */}
-                <button
-                  type="button"
-                  onClick={() => removeTask(task.id)}
-                  style={{
-                    width: 20, height: 20, borderRadius: 99, background: 'transparent',
-                    border: 'none', cursor: 'pointer', color: theme.muter,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, fontSize: 14, lineHeight: 1,
-                  }}
-                >×</button>
+                <button type="button" onClick={() => removeTask(task.id)}
+                  style={{ width: 24, height: 24, borderRadius: 99, background: 'transparent', border: 'none', cursor: 'pointer', color: theme.muter, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, lineHeight: 1 }}
+                  aria-label="Remove task">×</button>
               </div>
             );
           })}
