@@ -29,12 +29,21 @@ function toTimeInputValue(hour: number, minute: number) {
   return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 }
 
-// Minimum date string for the date input (today)
-function minDate() { return todayStr(); }
+function localDateStr(tz?: string) { return todayStr(tz); }
 
-function friendlyDate(dateStr: string) {
-  const today = todayStr();
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+function tomorrowStr(tz?: string) {
+  try {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toLocaleDateString('en-CA', { timeZone: tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone });
+  } catch {
+    return new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  }
+}
+
+function friendlyDate(dateStr: string, tz?: string) {
+  const today = localDateStr(tz);
+  const tomorrow = tomorrowStr(tz);
   if (dateStr === today) return 'Today';
   if (dateStr === tomorrow) return 'Tomorrow';
   return new Date(dateStr + 'T12:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -79,8 +88,8 @@ const STATUS = {
 
 // ── Shared form component ─────────────────────────────────────
 function TaskForm({
-  initialLabel = '', initialTime = '09:00', initialDate = todayStr(),
-  onSave, onCancel, theme, accent, saveLabel = 'Add task →',
+  initialLabel = '', initialTime = '09:00', initialDate,
+  onSave, onCancel, theme, accent, saveLabel = 'Add task →', timezone,
 }: {
   initialLabel?: string; initialTime?: string; initialDate?: string;
   onSave: (label: string, hour: number, minute: number, date: string) => void;
@@ -88,10 +97,11 @@ function TaskForm({
   theme: ReturnType<typeof useTheme>['theme'];
   accent: string;
   saveLabel?: string;
+  timezone?: string;
 }) {
   const [label, setLabel] = useState(initialLabel);
   const [timeVal, setTimeVal] = useState(initialTime);
-  const [dateVal, setDateVal] = useState(initialDate);
+  const [dateVal, setDateVal] = useState(initialDate ?? localDateStr(timezone));
 
   const handleSave = () => {
     if (!label.trim()) return;
@@ -121,7 +131,7 @@ function TaskForm({
           <input
             type="date"
             value={dateVal}
-            min={minDate()}
+            min={localDateStr(timezone)}
             onChange={e => setDateVal(e.target.value)}
             style={{
               width: '100%', padding: '8px 12px', borderRadius: 12,
@@ -170,7 +180,7 @@ export default function TasksPage() {
   const { theme, accent } = useTheme();
   const { unit } = useTemperature();
   const { weather, loading } = useWeather();
-  const { todayTasks, overdueTasks, toggleComplete, removeTask, clearCompleted, addTask, editTask } = useTasks();
+  const { todayTasks, overdueTasks, toggleComplete, removeTask, clearCompleted, addTask, editTask, timezone } = useTasks();
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -307,6 +317,7 @@ export default function TasksPage() {
           <TaskForm
             theme={theme}
             accent={accent}
+            timezone={timezone}
             onSave={(label, hour, minute, date) => {
               addTask(label, hour, minute, date);
               setShowAdd(false);
@@ -342,6 +353,7 @@ export default function TasksPage() {
                     initialTime={toTimeInputValue(task.hour, task.minute)}
                     initialDate={task.date}
                     saveLabel="Save changes →"
+                    timezone={timezone}
                     onSave={(label, hour, minute, date) => {
                       editTask(task.id, { label, hour, minute, date } as TaskUpdates);
                       setEditingId(null);
@@ -385,7 +397,7 @@ export default function TasksPage() {
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}>{task.label}</div>
                   <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, marginTop: 2 }}>
-                    {friendlyDate(task.date)} · {formatTime(task.hour, task.minute)}
+                    {friendlyDate(task.date, timezone)} · {formatTime(task.hour, task.minute)}
                     {isOverdue && <span style={{ color: s.bg, marginLeft: 4 }}>· overdue</span>}
                   </div>
                 </div>

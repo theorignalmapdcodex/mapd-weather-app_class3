@@ -1,234 +1,141 @@
 <p align="left">
-  <img src="public/city-images/weather-app_logo.png" alt="Weather App Logo" width="200"/>
+  <img src="public/icons/icon-192.png" alt="CityCast icon" width="80"/>
 </p>
 
-# The 'Dev' Weather App
+# CityCast
 
-A minimalistic, everyday-use weather application built with Next.js 16, TypeScript, and Tailwind CSS. Search for any city worldwide, get real-time weather data, and see beautiful dynamic city images powered by Unsplash API.
+> Weather, but not boring.
 
-## ✨ Features
+CityCast is a PWA-ready weather app built with Next.js 16 (App Router) and TypeScript. It gives you real-time weather, a timezone-aware task planner, saved places, and a fully themeable UI — all optimised for handheld devices.
 
-### 🌟 New User Experience Updates
-- **"Where are you?" Prompt**: Set your home location on first visit for instant weather display
-- **Smart Search**: Search for any city worldwide with real-time geocoding
-- **Dynamic City Images**: Powered by Unsplash API - beautiful photos for any searched city
-- **Clickable Weather Cards**: Tap/click weather cards to view detailed forecasts
-- **Home Location Memory**: Your location is saved locally for quick access
-- **Durham Default**: Defaults to Durham, NC if no home location is set
+---
 
-### 🎨 Core Features
-- **Minimalistic Design**: Clean, artistic interface designed for everyday use by all ages
-- **Real-Time Weather**: Live data from Open-Meteo API for any location
-- **Detailed Forecast**: 3-day weather predictions with visual weather icons
-- **Dark/Light Theme**: Toggle between themes with persistent preference
-- **Temperature Units**: Switch between Fahrenheit and Celsius
-- **Responsive Design**: Optimized for mobile, tablet, and desktop
-- **Reusable Components**: Modular, well-documented component architecture
+## Features
 
-## 🔍 Search Capabilities
+### Weather
+- Real-time conditions and 7-day forecast via Open-Meteo API
+- Hourly forecast with precipitation probability
+- Auto-detects location changes (travel detection) and prompts to switch city
+- Weather-aware task planner — cross-checks your tasks against the sky
 
-- **Worldwide Search**: Find weather for any city globally (Paris, Tokyo, Sydney, etc.)
-- **Geocoding Integration**: Automatic coordinate lookup for searched locations
-- **Instant Results**: Fast API responses with loading states
-- **Smart Fallback**: Local images used if Unsplash API is unavailable
+### Tasks
+- Add tasks for today or any future date
+- Native date + time pickers (15-min steps) synced to your chosen city's timezone
+- Inline editing, weather status badges (Good / Heads Up / Reschedule?), overdue tracking
+- Task count badge on the Tasks tab in the bottom nav
 
-## 🚀 Getting Started
+### Places
+- Save multiple cities with local time and live weather
+- Upload custom photos per city
+- Set any city as home with one tap
+
+### Design & Theming
+- Three themes: Cream · Dark · Pastel
+- Five accent colours: Orange · Coral · Lime · Violet · Sky
+- Syne (display) + Space Grotesk (body) + JetBrains Mono (labels)
+- Splash screen on every load, tied to weather fetch state
+
+### PWA / Install
+- Installable on iOS (Safari → Add to Home Screen) and Android (Chrome install banner)
+- Runs standalone, full-screen, no browser chrome
+- App icons at 192 × 192 and 512 × 512
+
+---
+
+## Getting Started
 
 ### Prerequisites
-- Node.js 18+ installed
-- npm or yarn package manager
-- (Optional) Free Unsplash API key for dynamic city images
+- Node.js 18+
+- npm
 
-### Installation
+### Install & run
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd mapd-weather-app-class3
-   ```
+```bash
+# 1. Install dependencies
+npm install
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+# 2. Copy env template and add your Open-Meteo key if needed
+cp .env.local.example .env.local
 
-3. **Set up Unsplash API** (optional but recommended):
-   - Get your free API key from [Unsplash Developers](https://unsplash.com/developers)
-   - Create a `.env.local` file in the project root:
-     ```bash
-     # On Windows:
-     copy .env.local.example .env.local
+# 3. Start dev server
+npm run dev
+```
 
-     # On macOS/Linux:
-     cp .env.local.example .env.local
-     ```
-   - Add your API key to `.env.local`:
-     ```env
-     NEXT_PUBLIC_UNSPLASH_ACCESS_KEY=your_actual_access_key_here
-     ```
-   - See [UNSPLASH_SETUP.md](docs/UNSPLASH_SETUP.md) for detailed instructions
-   - **Note**: The app works perfectly without this - it will use local fallback images
+Open [http://localhost:3000](http://localhost:3000) — you'll be prompted to set your home city on first visit.
 
-4. **Run the development server**:
-   ```bash
-   npm run dev
-   ```
+### Build for production
 
-5. **Open your browser** and navigate to [http://localhost:3000](http://localhost:3000)
+```bash
+npm run build
+npm start
+```
 
-6. **First-time setup**:
-   - You'll see "Where are you?" prompt
-   - Enter your city (e.g., "Durham", "London", "Tokyo")
-   - Your location will be saved for future visits
-   - Start searching for any city worldwide!
+---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── page.tsx                      # Home page with weather display
-│   └── weather/
-│       ├── [location]/
-│       │   └── page.tsx              # Detailed city weather page
-│       └── all-cities/
-│           └── page.tsx              # All cities overview page
+│   ├── page.tsx                  # Home — current conditions
+│   ├── hourly/page.tsx           # Hourly forecast
+│   ├── 7-day/page.tsx            # 7-day forecast
+│   ├── plan/page.tsx             # Tasks (weather-aware planner)
+│   ├── places/page.tsx           # Saved cities
+│   ├── calendar/page.tsx         # Calendar view
+│   ├── settings/page.tsx         # Theme, accent, home city
+│   └── weather/[location]/       # City detail page
 ├── components/
-│   ├── CityPictureCard.tsx           # Dynamic city image display
-│   ├── CurrentWeatherDetail.tsx      # Current weather details
-│   ├── ErrorMessage.tsx              # Error state component
-│   ├── ForecastCard.tsx              # 3-day forecast display
-│   ├── LoadingState.tsx              # Loading state component
-│   ├── LocationSearch.tsx            # City dropdown selector
-│   ├── PageHeader.tsx                # Page header component
-│   ├── WeatherCard.tsx               # Weather card component
-│   ├── WeatherDisplay.tsx            # Main weather display
-│   ├── WeatherIcon.tsx               # Weather condition icons
-│   └── ui/
-│       └── Button.tsx                # Reusable button with icon support
-├── data/
-│   ├── cities.ts                     # City coordinates (6 cities)
-│   └── weather-data.ts               # Dummy weather data
+│   ├── BottomNav.tsx             # Tab bar with dynamic calendar icon
+│   ├── CCHeader.tsx              # Brand + °F/°C + theme toggle
+│   ├── SplashScreen.tsx          # Load screen (every visit)
+│   ├── ClientLayout.tsx          # Splash gate tied to weather fetch
+│   ├── WeatherIcon.tsx           # SVG weather condition icons
+│   └── ...
+├── contexts/
+│   ├── WeatherContext.tsx        # Weather data + travel detection
+│   ├── TaskContext.tsx           # Tasks + timezone-aware today logic
+│   ├── ThemeContext.tsx          # Theme / accent state
+│   └── TemperatureContext.tsx    # °F / °C toggle
 ├── lib/
-│   └── getWeather.ts                 # Weather data retrieval logic
+│   ├── getWeather.ts             # Open-Meteo API calls
+│   ├── geocode.ts                # City → coordinates
+│   └── copy.ts                   # Weather condition labels + copy
 └── types/
-    └── weather.ts                    # TypeScript type definitions
+    └── weather.ts                # TypeScript interfaces
 ```
 
-## 🎨 Design System
+---
 
-### Color Palette
-- **Background**: Soft gradient from gray-50 to gray-100
-- **Cards**: White with subtle shadows and borders
-- **Primary Actions**: Black background with white text
-- **Secondary Actions**: Gray text with hover effects
-- **Accents**: Weather-specific (amber sun, blue rain, gray clouds)
+## Tech Stack
 
-### Typography
-- **Font Weight**: Light (300) for minimalistic aesthetic
-- **Tracking**: Tight for headlines, wide for labels
-- **Sizes**: Responsive from mobile to desktop
+| | |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Styling | Inline CSS-in-JS (runtime theming) + Tailwind base |
+| Fonts | Syne · Space Grotesk · JetBrains Mono (Google Fonts) |
+| Weather API | Open-Meteo (free, no key required) |
+| Geocoding | Open-Meteo Geocoding API |
+| Icons | Hand-crafted SVG |
+| PWA | Web App Manifest + sharp-generated icons |
 
-### Components
-- **Border Radius**: Generous (rounded-3xl) for modern look
-- **Shadows**: Subtle for depth without distraction
-- **Icons**: Thin stroke width (1.5) from lucide-react
+---
 
-## 🛠️ Key Technologies
+## Brand Assets
 
-- **Next.js 16**: React framework with App Router
-- **TypeScript**: Type-safe development
-- **Tailwind CSS**: Utility-first styling
-- **Lucide React**: Minimalistic icon library
-- **Next.js Image**: Optimized image loading
+Design assets live in `Weather App Redesign/brand/`:
 
-## 📚 Key Concepts Demonstrated
+| File | Description |
+|---|---|
+| `icon-mark.svg` / `.png` | Standalone CityCast icon (transparent bg) |
+| `logo.svg` / `.png` | Horizontal lockup — icon + CITYCAST wordmark |
+| `BRAND_KIT.md` | Colours, fonts, voice & tone, spacing tokens |
 
-This project showcases:
+Run `node export-pngs.js` inside that folder to regenerate the PNGs.
 
-- **Component Composition**: Building UIs from reusable, documented components
-- **Props & State**: Passing data and managing interactive UI with React hooks
-- **Dynamic Routes**: Next.js App Router with dynamic `[location]` parameter
-- **Type Safety**: Comprehensive TypeScript interfaces throughout
-- **Responsive Design**: Mobile-first approach with Tailwind breakpoints
-- **Image Optimization**: Next.js Image component with lazy loading
-- **Code Documentation**: Detailed comments explaining all changes and additions
-- **Design Systems**: Consistent styling across all pages
-- **Conditional Rendering**: Different UI states (loading, error, success)
+---
 
-## 🆕 Latest Updates (December 2025)
+## License
 
-### 🎯 Major User Experience Overhaul
-- **Home Location Feature**: "Where are you?" prompt on first visit with localStorage persistence
-- **Search-First Interface**: Replaced dropdown with dynamic search input for worldwide city lookup
-- **Unsplash API Integration**: Dynamic city images fetched from Unsplash for any searched location
-- **Clickable Weather Cards**: Cards now navigate to detailed forecast page with smooth animations
-- **Smart Defaults**: Durham, NC as default location for new users
-
-### 🔧 Technical Improvements
-- **Geocoding Integration**: Real-time coordinate lookup for any city worldwide
-- **Image Fallback System**: Graceful degradation to local images if Unsplash unavailable
-- **Enhanced Error Handling**: Better user feedback with toast notifications
-- **Improved Loading States**: Skeleton screens and spinners for better UX
-- **Next.js Image Optimization**: Remote image pattern support for Unsplash
-
-### 📦 New Files & Documentation
-- `src/lib/unsplash.ts` - Unsplash API integration utility
-- `docs/UNSPLASH_SETUP.md` - Comprehensive setup guide for API configuration
-- `.env.local.example` - Environment variable template
-- `docs/` - All documentation in one organized folder
-
-## 🔧 Building for Production
-
-```bash
-# Build the application
-npm run build
-
-# Start production server
-npm start
-```
-
-## 📖 Additional Documentation
-
-All documentation is organized in the [`docs/`](docs/) folder:
-
-- [QUICK_START.md](docs/QUICK_START.md) - Get running in 3 minutes
-- [UNSPLASH_SETUP.md](docs/UNSPLASH_SETUP.md) - **NEW!** Complete guide for Unsplash API setup
-- [UPDATE_SUMMARY_DEC2025.md](docs/UPDATE_SUMMARY_DEC2025.md) - Detailed changelog of latest updates
-- [TESTING_CHECKLIST.md](docs/TESTING_CHECKLIST.md) - QA testing guide
-- `CITY_IMAGES_SETUP.md` - Guide for adding local fallback city images
-- `IMPLEMENTATION_SUMMARY.md` - Historical changelog
-
-## 🎯 Completed Features ✅
-
-- ✅ Real API integration (Open-Meteo for weather)
-- ✅ Geocoding for any worldwide location
-- ✅ Temperature unit toggle (°F/°C)
-- ✅ Dark/Light theme toggle
-- ✅ User home location with localStorage
-- ✅ Dynamic city images via Unsplash API
-- ✅ Clickable/tappable weather cards
-- ✅ Worldwide city search
-
-## 🚀 Future Enhancements
-
-- Browser geolocation detection (auto-detect user's city)
-- Hourly forecast view (12-24 hour predictions)
-- Weather alerts and severe weather notifications
-- Favorite cities list
-- Weather comparison (multiple cities side-by-side)
-- Share weather card as image
-- Offline mode with cached data
-
-## 📝 License
-
-This project is for educational purposes.
-
-## 👨‍💻 Development Notes
-
-All code includes detailed comments marking:
-- `// NEW:` - Newly added code
-- `// MODIFIED:` - Changed existing code
-- Inline explanations for complex logic
-
-This makes the codebase easy to understand and maintain for learning purposes.
+Educational use. Built by @theoriginalmapd.

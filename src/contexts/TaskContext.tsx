@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { useWeather } from "@/contexts/WeatherContext";
 
 export interface Task {
   id: string;
@@ -24,12 +25,20 @@ interface TaskContextType {
   todayTasks: Task[];
   overdueTasks: Task[];
   incompleteCount: number;
+  timezone: string | undefined;
 }
 
 const TaskContext = createContext<TaskContextType | undefined>(undefined);
 
-export function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+// Returns YYYY-MM-DD in the given timezone (falls back to device local time)
+export function todayStr(tz?: string): string {
+  try {
+    return new Date().toLocaleDateString('en-CA', {
+      timeZone: tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
 }
 
 export function formatTime(hour: number, minute: number) {
@@ -40,6 +49,8 @@ export function formatTime(hour: number, minute: number) {
 
 export function TaskProvider({ children }: { children: ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const { weather } = useWeather();
+  const timezone = weather?.timezone;
 
   useEffect(() => {
     const saved = localStorage.getItem('cc-tasks-v2');
@@ -47,11 +58,6 @@ export function TaskProvider({ children }: { children: ReactNode }) {
       try { setTasks(JSON.parse(saved)); } catch { /* ignore */ }
     }
   }, []);
-
-  const persist = (t: Task[]) => {
-    setTasks(t);
-    localStorage.setItem('cc-tasks-v2', JSON.stringify(t));
-  };
 
   const addTask = useCallback((label: string, hour: number, minute: number, date: string) => {
     const t: Task = {
@@ -100,7 +106,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const today = todayStr();
+  const today = todayStr(timezone);
   const todayTasks = tasks.filter(t => t.date === today);
   const overdueTasks = tasks.filter(t => t.date < today && !t.completed);
   const incompleteCount = todayTasks.filter(t => !t.completed).length + overdueTasks.length;
@@ -108,7 +114,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
   return (
     <TaskContext.Provider value={{
       tasks, addTask, editTask, toggleComplete, removeTask, clearCompleted,
-      todayTasks, overdueTasks, incompleteCount,
+      todayTasks, overdueTasks, incompleteCount, timezone,
     }}>
       {children}
     </TaskContext.Provider>

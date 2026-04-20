@@ -9,12 +9,12 @@ import { weatherCodeToCondition } from "@/lib/copy";
 
 const MONO = 'var(--font-jetbrains-mono), "JetBrains Mono", monospace';
 
-// Dynamic calendar icon showing day + weather + task badge
+// Dynamic calendar icon showing day + weather
 function CalendarTabIcon({
-  color, accent, inkBg, weatherCode, taskCount,
+  color, accent, weatherCode,
 }: {
-  color: string; accent: string; inkBg: string;
-  weatherCode?: number; taskCount: number;
+  color: string; accent: string;
+  weatherCode?: number;
 }) {
   const day = new Date().getDate();
   const cond = weatherCode !== undefined ? weatherCodeToCondition(weatherCode) : null;
@@ -59,19 +59,6 @@ function CalendarTabIcon({
         </div>
       )}
 
-      {/* Task count badge */}
-      {taskCount > 0 && (
-        <div style={{
-          position: 'absolute', top: -4, right: -5,
-          minWidth: 13, height: 13, borderRadius: 99,
-          background: accent, color: inkBg,
-          fontSize: 7, fontWeight: 800, fontFamily: MONO,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '0 2px', lineHeight: 1,
-        }}>
-          {taskCount > 9 ? '9+' : taskCount}
-        </div>
-      )}
     </div>
   );
 }
@@ -149,10 +136,11 @@ export function BottomNav() {
         background: theme.chip, borderRadius: 999, padding: '8px 6px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
       }}>
-        {/* Static tabs: Home / Plan / Places */}
+        {/* Static tabs: Home / Tasks / Places */}
         {STATIC_TABS.map(tab => {
           const active = isActive(tab.href);
           const color = active ? accent : theme.chipText;
+          const isTasksTab = tab.href === '/plan';
           return (
             <Link
               key={tab.href}
@@ -163,7 +151,21 @@ export function BottomNav() {
                 textDecoration: 'none', WebkitUserSelect: 'none', userSelect: 'none',
               }}
             >
-              {tab.icon(color)}
+              <div style={{ position: 'relative' }}>
+                {tab.icon(color)}
+                {isTasksTab && incompleteCount > 0 && (
+                  <div style={{
+                    position: 'absolute', top: -4, right: -5,
+                    minWidth: 13, height: 13, borderRadius: 99,
+                    background: accent, color: theme.chip,
+                    fontSize: 7, fontWeight: 800, fontFamily: MONO,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '0 2px', lineHeight: 1,
+                  }}>
+                    {incompleteCount > 9 ? '9+' : incompleteCount}
+                  </div>
+                )}
+              </div>
               <span style={{
                 fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
                 textTransform: 'uppercase', color, transition: 'color 0.15s',
@@ -186,9 +188,7 @@ export function BottomNav() {
           <CalendarTabIcon
             color={calendarColor}
             accent={accent}
-            inkBg={theme.chip}
             weatherCode={weather?.current.condition.code}
-            taskCount={incompleteCount}
           />
           <span style={{
             fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.5,
