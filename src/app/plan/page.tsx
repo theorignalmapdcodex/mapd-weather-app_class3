@@ -421,7 +421,11 @@ export default function TasksPage() {
                       const active = (task.progress ?? 0) === p;
                       return (
                         <button key={p} type="button"
-                          onClick={() => editTask(task.id, { progress: p })}
+                          onClick={() => {
+                            editTask(task.id, { progress: p });
+                            if (p === 100 && !task.completed) toggleComplete(task.id);
+                            if (p < 100 && task.completed) toggleComplete(task.id);
+                          }}
                           style={{
                             padding: '3px 9px', borderRadius: 99, cursor: 'pointer',
                             fontFamily: MONO, fontSize: 9, fontWeight: 700,

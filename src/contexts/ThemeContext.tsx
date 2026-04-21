@@ -39,8 +39,10 @@ interface ThemeContextType {
   personality: Personality;
   theme: ThemeTokens;
   accent: string;
+  customAccentHex: string | null;
   setThemeKey: (k: ThemeKey) => void;
   setAccentKey: (k: AccentKey) => void;
+  setCustomAccent: (hex: string | null) => void;
   setPersonality: (p: Personality) => void;
   toggleTheme: () => void;
 }
@@ -54,6 +56,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeKey, setThemeKeyState] = useState<ThemeKey>('cream');
   const [accentKey, setAccentKeyState] = useState<AccentKey>('orange');
   const [personality, setPersonalityState] = useState<Personality>('witty');
+  const [customAccentHex, setCustomAccentHexState] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -61,9 +64,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const tk = localStorage.getItem('cc-theme') as ThemeKey | null;
     const ak = localStorage.getItem('cc-accent') as AccentKey | null;
     const pk = localStorage.getItem('cc-personality') as Personality | null;
+    const ch = localStorage.getItem('cc-custom-accent');
     if (tk && THEMES[tk]) setThemeKeyState(tk);
     if (ak && ACCENTS[ak]) setAccentKeyState(ak);
     if (pk && ['witty', 'warm', 'data'].includes(pk)) setPersonalityState(pk);
+    if (ch) setCustomAccentHexState(ch);
   }, []);
 
   const setThemeKey = (k: ThemeKey) => {
@@ -73,7 +78,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setAccentKey = (k: AccentKey) => {
     setAccentKeyState(k);
-    if (mounted) localStorage.setItem('cc-accent', k);
+    setCustomAccentHexState(null);
+    if (mounted) {
+      localStorage.setItem('cc-accent', k);
+      localStorage.removeItem('cc-custom-accent');
+    }
+  };
+
+  const setCustomAccent = (hex: string | null) => {
+    setCustomAccentHexState(hex);
+    if (mounted) {
+      if (hex) localStorage.setItem('cc-custom-accent', hex);
+      else localStorage.removeItem('cc-custom-accent');
+    }
   };
 
   const setPersonality = (p: Personality) => {
@@ -87,8 +104,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     <ThemeContext.Provider value={{
       themeKey, accentKey, personality,
       theme: THEMES[themeKey],
-      accent: ACCENTS[accentKey],
-      setThemeKey, setAccentKey, setPersonality,
+      accent: customAccentHex ?? ACCENTS[accentKey],
+      customAccentHex,
+      setThemeKey, setAccentKey, setCustomAccent, setPersonality,
       toggleTheme,
     }}>
       {children}
@@ -104,7 +122,8 @@ export function useTheme() {
         themeKey: 'cream' as ThemeKey, accentKey: 'orange' as AccentKey,
         personality: 'witty' as Personality,
         theme: DEFAULT_THEME, accent: DEFAULT_ACCENT,
-        setThemeKey: () => {}, setAccentKey: () => {},
+        customAccentHex: null,
+        setThemeKey: () => {}, setAccentKey: () => {}, setCustomAccent: () => {},
         setPersonality: () => {}, toggleTheme: () => {},
       };
     }

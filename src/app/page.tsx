@@ -480,7 +480,10 @@ export default function NowPage() {
               <div><span style={{ color: heroMute }}>H </span><b>{displayTemp(weather.forecast[0]?.maxTemp ?? weather.current.temperature, unit)}°</b></div>
               <div><span style={{ color: heroMute }}>L </span><b>{displayTemp(weather.forecast[0]?.minTemp ?? weather.current.temperature, unit)}°</b></div>
               <div><span style={{ color: heroMute }}>FEELS </span><b>{displayTemp(weather.current.feelsLike, unit)}°</b></div>
-              <div style={{ marginLeft: 'auto', color: heroAcc, fontWeight: 700, fontSize: 9, letterSpacing: 0.5 }}>LIVE</div>
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF3B30', animation: 'cc-pulse 1.5s ease-in-out infinite', flexShrink: 0 }} />
+                <span style={{ color: '#FF3B30', fontWeight: 700, fontSize: 9, letterSpacing: 0.5, fontFamily: MONO }}>LIVE</span>
+              </div>
             </div>
           </div>
 

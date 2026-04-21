@@ -38,23 +38,48 @@ export default function PlacesPage() {
   const [cityPhotos, setCityPhotos] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [adding, setAdding] = useState(false);
+  const [cityAutoPhotos, setCityAutoPhotos] = useState<Record<string, string>>({});
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  useEffect(() => {
-    // Load photos from localStorage
-    const savedPhotos = localStorage.getItem('cc-city-photos');
-    if (savedPhotos) {
-      try { setCityPhotos(JSON.parse(savedPhotos)); } catch { /* ignore */ }
-    }
+  const fetchUnsplashPhoto = async (cityName: string) => {
+    const key = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
+    if (!key) return;
+    try {
+      const r = await fetch(
+        `https://api.unsplash.com/photos/random?query=${encodeURIComponent(cityName + ' city')}&orientation=landscape&client_id=${key}`
+      );
+      if (!r.ok) return;
+      const d = await r.json();
+      const url = d.urls?.regular ?? d.urls?.small;
+      if (url) {
+        setCityAutoPhotos(prev => {
+          const next = { ...prev, [cityName]: url };
+          try { localStorage.setItem('cc-unsplash-photos', JSON.stringify(next)); } catch { /* quota */ }
+          return next;
+        });
+      }
+    } catch { /* ignore */ }
+  };
 
-    // Load saved cities
+  useEffect(() => {
+    const savedPhotos = localStorage.getItem('cc-city-photos');
+    if (savedPhotos) { try { setCityPhotos(JSON.parse(savedPhotos)); } catch { /* ignore */ } }
+    const savedAuto = localStorage.getItem('cc-unsplash-photos');
+    if (savedAuto) { try { setCityAutoPhotos(JSON.parse(savedAuto)); } catch { /* ignore */ } }
+
     const saved = localStorage.getItem('cc-saved-cities');
     const initial: SavedCity[] = saved ? JSON.parse(saved) : [];
     if (homeWeather && !initial.find(c => c.name.toLowerCase() === homeWeather.city.toLowerCase())) {
       initial.unshift({ name: homeWeather.city });
     }
     setCities(initial);
-    initial.forEach(c => fetchCityWeather(c.name));
+    initial.forEach(c => {
+      fetchCityWeather(c.name);
+      // Fetch Unsplash photo if not already cached
+      const autoCache = localStorage.getItem('cc-unsplash-photos');
+      const cached = autoCache ? JSON.parse(autoCache) : {};
+      if (!cached[c.name]) fetchUnsplashPhoto(c.name);
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homeWeather?.city]);
 
@@ -82,6 +107,7 @@ export default function PlacesPage() {
       const newList = [...cities, { name: geo.name }];
       saveList(newList);
       fetchCityWeather(geo.name);
+      if (!cityAutoPhotos[geo.name]) fetchUnsplashPhoto(geo.name);
     }
     setSearch('');
     setAdding(false);
@@ -181,7 +207,8 @@ export default function PlacesPage() {
         {cities.map((city, i) => {
           const w = cityWeathers[city.name];
           const isHome = isHomeCity(city.name);
-          const photo = cityPhotos[city.name];
+          const photo = cityPhotos[city.name] ?? cityAutoPhotos[city.name] ?? null;
+          const isUserPhoto = !!cityPhotos[city.name];
           const grad = FALLBACK_GRADIENTS[i % FALLBACK_GRADIENTS.length];
           const condition = w ? weatherCodeToCondition(w.current.condition.code) : 'sunny';
 
@@ -226,7 +253,7 @@ export default function PlacesPage() {
 
                 {/* Photo upload / remove button */}
                 <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 2 }}>
-                  {photo ? (
+                  {isUserPhoto ? (
                     <button
                       type="button"
                       onClick={() => removePhoto(city.name)}
