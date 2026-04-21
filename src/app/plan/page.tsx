@@ -28,8 +28,7 @@ function parseTimeInput(val: string): { hour: number; minute: number } | null {
   if (meridiem === 'pm' && hour !== 12) hour += 12;
   if (meridiem === 'am' && hour === 12) hour = 0;
   if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
-  const snapped = Math.round(minute / 15) * 15;
-  return { hour, minute: snapped >= 60 ? 0 : snapped };
+  return { hour, minute };
 }
 
 function toTimeInputValue(hour: number, minute: number) {

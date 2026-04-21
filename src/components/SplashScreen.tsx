@@ -31,16 +31,18 @@ export function SplashScreen({ onDone }: Props) {
       transition: 'opacity 0.5s ease-in-out',
       pointerEvents: fading ? 'none' : 'auto',
     }}>
-      {/* Big weather icon mark */}
+      {/* Logo mark — sun + cloud with breathing room */}
       <svg
-        width="96" height="96"
-        viewBox="0 0 96 96"
+        width="100" height="76"
+        viewBox="0 0 100 76"
         fill="none"
-        style={{ marginBottom: 28 }}
+        style={{ marginBottom: 18, overflow: 'visible' }}
       >
-        <circle cx="62" cy="34" r="22" fill={accent} />
+        {/* Sun — fully within bounds, top right */}
+        <circle cx="72" cy="24" r="20" fill={accent} />
+        {/* Cloud — anchored lower, overlapping sun */}
         <path
-          d="M10 62h76a18 18 0 0 0 0-36 17 17 0 0 0-1.8.18A26 26 0 0 0 10 42a18 18 0 0 0 0 20Z"
+          d="M10 64h80a16 16 0 0 0 0-32 15 15 0 0 0-2 .18A22 22 0 0 0 10 46a16 16 0 0 0 0 18Z"
           fill={theme.ink}
         />
       </svg>
@@ -49,8 +51,8 @@ export function SplashScreen({ onDone }: Props) {
       <div style={{
         fontFamily: DISPLAY,
         fontWeight: 800,
-        fontSize: 'clamp(36px, 10vw, 52px)',
-        letterSpacing: -2,
+        fontSize: 'clamp(40px, 11vw, 56px)',
+        letterSpacing: -2.5,
         color: theme.ink,
         marginBottom: 16,
         lineHeight: 1,

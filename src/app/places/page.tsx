@@ -99,10 +99,20 @@ export default function PlacesPage() {
   const handlePhotoUpload = (cityName: string, file: File) => {
     const reader = new FileReader();
     reader.onload = e => {
-      const base64 = e.target?.result as string;
-      const updated = { ...cityPhotos, [cityName]: base64 };
-      setCityPhotos(updated);
-      localStorage.setItem('cc-city-photos', JSON.stringify(updated));
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 600;
+        const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.72);
+        const updated = { ...cityPhotos, [cityName]: compressed };
+        setCityPhotos(updated);
+        try { localStorage.setItem('cc-city-photos', JSON.stringify(updated)); } catch { /* quota */ }
+      };
+      img.src = e.target?.result as string;
     };
     reader.readAsDataURL(file);
   };

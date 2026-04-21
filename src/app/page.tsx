@@ -7,7 +7,6 @@ import { useTemperature } from "@/contexts/TemperatureContext";
 import { useWeather } from "@/contexts/WeatherContext";
 import { weatherCodeToCondition, getCopy, getConditionLabel } from "@/lib/copy";
 import { CCHeader } from "@/components/CCHeader";
-import { MegaTemp } from "@/components/MegaTemp";
 import { WeatherIcon } from "@/components/WeatherIcon";
 import { CCCard } from "@/components/CCCard";
 import { DottedGlobe, latLonToPinCoords } from "@/components/DottedGlobe";
@@ -94,8 +93,8 @@ function SceneCard({ isNight, condition }: { isNight: boolean; condition: string
   const groundColor2 = isNight ? '#0A1428' : condition === 'rain' ? '#364E58' : '#3A7020';
 
   return (
-    <div style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 12 }}>
-      <svg width="100%" viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
+    <svg width="100%" height="100%" viewBox="0 0 480 200" preserveAspectRatio="xMidYMid slice"
+      xmlns="http://www.w3.org/2000/svg" style={{ position: 'absolute', inset: 0, display: 'block' }}>
         <defs>
           <linearGradient id="sc-sky" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={top} />
@@ -184,8 +183,7 @@ function SceneCard({ isNight, condition }: { isNight: boolean; condition: string
             <line x1="243" y1="153" x2="247" y2="164" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" />
           </>
         )}
-      </svg>
-    </div>
+    </svg>
   );
 }
 
@@ -427,50 +425,67 @@ export default function NowPage() {
   const month = new Date().getMonth(); // 0-11
   const isSpring = month >= 2 && month <= 5;
 
+  // Hero overlay colours — white text on dark skies, dark text on light skies
+  const heroOnDark = isNight || condition === 'rain' || condition === 'storm';
+  const heroInk    = heroOnDark ? '#FFFFFF' : '#1A1A1A';
+  const heroMute   = heroOnDark ? 'rgba(255,255,255,0.72)' : 'rgba(26,26,26,0.6)';
+  const heroAcc    = heroOnDark ? 'rgba(255,255,255,0.9)' : accent;
+
   return (
     <div style={pageStyle}>
       <CCHeader />
 
-      {/* Location + time */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: theme.mute }}>
-        <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
-          <path d="M10 2a6 6 0 0 0-6 6c0 4.5 6 10 6 10s6-5.5 6-10a6 6 0 0 0-6-6Z" fill="none" stroke={accent} strokeWidth="1.8" />
-          <circle cx="10" cy="8" r="2" fill={accent} />
-        </svg>
-        <span style={{ color: theme.ink, fontWeight: 700 }}>{weather.city}</span>
-        <span>· {localTime}</span>
-      </div>
-      <div style={{ color: theme.mute, fontSize: 13, marginBottom: 20, fontFamily: BODY }}>
-        {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-        {' · '}{nowLabel}
-      </div>
+      {/* ── Hero: scene animation + all weather info overlaid ── */}
+      <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', marginBottom: 16, height: 'clamp(275px, 74vw, 340px)' }}>
 
-      {/* MegaTemp + icon */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
-        <MegaTemp value={displayTemp(weather.current.temperature, unit)} unit={unit} />
-        <div style={{ marginTop: 12, flexShrink: 0 }}>
-          <WeatherIcon type={condition} night={isNight} size={64} color={theme.ink} accent={accent} />
+        {/* Background scene */}
+        <SceneCard isNight={isNight} condition={condition} />
+
+        {/* Gradient for text legibility */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, transparent 42%, rgba(0,0,0,0.48) 100%)' }} />
+
+        {/* Overlay content */}
+        <div style={{ position: 'absolute', inset: 0, padding: '16px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+
+          {/* Top: city + date */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: MONO, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: heroMute }}>
+              <svg width="12" height="12" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2a6 6 0 0 0-6 6c0 4.5 6 10 6 10s6-5.5 6-10a6 6 0 0 0-6-6Z" fill="none" stroke={heroAcc} strokeWidth="1.8" />
+                <circle cx="10" cy="8" r="2" fill={heroAcc} />
+              </svg>
+              <span style={{ color: heroInk, fontWeight: 700 }}>{weather.city}</span>
+              <span>· {localTime}</span>
+            </div>
+            <div style={{ color: heroMute, fontSize: 12, marginTop: 3, fontFamily: BODY }}>
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} · {nowLabel}
+            </div>
+          </div>
+
+          {/* Bottom: temp + icon + label + copy + H/L/Feels */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 4 }}>
+              <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 'clamp(68px, 21vw, 104px)', lineHeight: 0.85, letterSpacing: '-0.05em', color: heroInk }}>
+                {displayTemp(weather.current.temperature, unit)}<span style={{ fontSize: 'clamp(26px, 7.5vw, 36px)', marginLeft: 2, letterSpacing: -1 }}>°{unit}</span>
+              </div>
+              <WeatherIcon type={condition} night={isNight} size={52} color={heroInk} accent={heroOnDark ? 'rgba(255,255,255,0.9)' : accent} />
+            </div>
+            <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 20, letterSpacing: -0.5, color: heroInk, marginBottom: 3 }}>
+              {conditionLabel}.
+            </div>
+            <div style={{ color: heroMute, fontSize: 13, lineHeight: 1.35, marginBottom: 10, maxWidth: 280 }}>
+              {copy}
+            </div>
+            <div style={{ display: 'flex', gap: 12, fontFamily: MONO, fontSize: 11, color: heroInk, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div><span style={{ color: heroMute }}>H </span><b>{displayTemp(weather.forecast[0]?.maxTemp ?? weather.current.temperature, unit)}°</b></div>
+              <div><span style={{ color: heroMute }}>L </span><b>{displayTemp(weather.forecast[0]?.minTemp ?? weather.current.temperature, unit)}°</b></div>
+              <div><span style={{ color: heroMute }}>FEELS </span><b>{displayTemp(weather.current.feelsLike, unit)}°</b></div>
+              <div style={{ marginLeft: 'auto', color: heroAcc, fontWeight: 700, fontSize: 9, letterSpacing: 0.5 }}>LIVE</div>
+            </div>
+          </div>
+
         </div>
       </div>
-
-      {/* Condition + copy */}
-      <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 28, letterSpacing: -0.5, marginBottom: 6 }}>
-        {conditionLabel}.
-      </div>
-      <div style={{ color: theme.mute, fontSize: 15, lineHeight: 1.4, marginBottom: 16, maxWidth: 300 }}>
-        {copy}
-      </div>
-
-      {/* H / L / Feels */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, fontFamily: MONO, fontSize: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div><span style={{ color: theme.mute }}>H </span><b>{displayTemp(weather.forecast[0]?.maxTemp ?? weather.current.temperature, unit)}°</b></div>
-        <div><span style={{ color: theme.mute }}>L </span><b>{displayTemp(weather.forecast[0]?.minTemp ?? weather.current.temperature, unit)}°</b></div>
-        <div><span style={{ color: theme.mute }}>FEELS </span><b>{displayTemp(weather.current.feelsLike, unit)}°</b></div>
-        <div style={{ marginLeft: 'auto', color: accent, fontWeight: 700, fontSize: 10, letterSpacing: 0.5 }}>LIVE</div>
-      </div>
-
-      {/* Scene illustration */}
-      <SceneCard isNight={isNight} condition={condition} />
 
       {/* 12-hour strip */}
       {hourlySlice.length > 0 && (

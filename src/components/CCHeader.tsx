@@ -20,7 +20,7 @@ export function CCHeader() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24,
       }}>
         {/* Clickable logo → home */}
-        <Link href="/" style={{ textDecoration: 'none' }}>
+        <Link href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
           <Brand size={14} />
         </Link>
 
