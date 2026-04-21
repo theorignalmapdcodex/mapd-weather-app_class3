@@ -3,7 +3,7 @@
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTemperature } from "@/contexts/TemperatureContext";
 import { useWeather } from "@/contexts/WeatherContext";
-import { weatherCodeToCondition, CONDITION_LABELS } from "@/lib/copy";
+import { weatherCodeToCondition, getConditionLabel } from "@/lib/copy";
 import { CCHeader } from "@/components/CCHeader";
 import { WeatherIcon } from "@/components/WeatherIcon";
 import Link from "next/link";
@@ -171,7 +171,9 @@ export default function HourlyPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {hourly.map((h, i) => {
           const cond = weatherCodeToCondition(h.weatherCode);
-          const condLabel = CONDITION_LABELS[cond];
+          const hourVal = parseInt(h.time.slice(11, 13), 10);
+          const hourIsNight = hourVal < 6 || hourVal >= 20;
+          const condLabel = getConditionLabel(cond, hourIsNight);
           const isHighPrecip = h.precipProbability > 40;
           return (
             <div key={i} style={{

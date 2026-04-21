@@ -7,7 +7,6 @@ import { useWeather } from "@/contexts/WeatherContext";
 import { useTasks, formatTime, todayStr, Task, TaskUpdates } from "@/contexts/TaskContext";
 import { CCHeader } from "@/components/CCHeader";
 import { WeatherIcon } from "@/components/WeatherIcon";
-import { weatherCodeToCondition } from "@/lib/copy";
 import Link from "next/link";
 import { HourlyForecast } from "@/types/weather";
 
@@ -57,27 +56,6 @@ function friendlyDate(dateStr: string, tz?: string) {
   if (dateStr === today) return 'Today';
   if (dateStr === tomorrow) return 'Tomorrow';
   return new Date(dateStr + 'T12:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-}
-
-const WINDOWS = [
-  { label: 'Morning',    start: 6,  end: 9,  time: '6–9 AM' },
-  { label: 'Mid-morning',start: 9,  end: 12, time: '9 AM–12 PM' },
-  { label: 'Afternoon',  start: 12, end: 15, time: '12–3 PM' },
-  { label: 'Late PM',    start: 15, end: 18, time: '3–6 PM' },
-  { label: 'Evening',    start: 18, end: 21, time: '6–9 PM' },
-  { label: 'Night',      start: 21, end: 24, time: '9–11 PM' },
-];
-
-function getWindowStatus(start: number, end: number, hourly: HourlyForecast[]) {
-  const hrs = hourly.filter(h => {
-    const hr = new Date(h.time + ':00').getHours();
-    return hr >= start && hr < end;
-  });
-  if (!hrs.length) return 'good';
-  const avg = hrs.reduce((a, b) => a + b.precipProbability, 0) / hrs.length;
-  if (hrs.some(h => h.weatherCode >= 95) || avg > 60) return 'inside';
-  if (avg > 30) return 'heads-up';
-  return 'good';
 }
 
 function getHourStatus(hour: number, hourly: HourlyForecast[]) {
@@ -247,6 +225,9 @@ export default function TasksPage() {
       .sort((a, b) => a.hour !== b.hour ? a.hour - b.hour : a.minute - b.minute)
       .map(t => ({ ...t, _overdue: false as const })),
   ];
+  const avgProgress = allTasks.length === 0 ? 0 : Math.round(
+    allTasks.reduce((sum, t) => sum + (t.completed ? 100 : (t.progress ?? 0)), 0) / allTasks.length
+  );
 
   return (
     <div style={pageStyle}>
@@ -276,32 +257,6 @@ export default function TasksPage() {
         </div>
       </div>
 
-      {/* Good windows */}
-      <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 12 }}>
-        Good Windows Today
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 28 }}>
-        {WINDOWS.map(w => {
-          const status = getWindowStatus(w.start, w.end, hourly);
-          const s = STATUS[status] || STATUS.good;
-          const wHour = hourly.find(h => new Date(h.time + ':00').getHours() === w.start);
-          return (
-            <div key={w.time} style={{ background: `${s.bg}12`, borderRadius: 14, padding: '10px 12px', border: `1.5px solid ${s.bg}35` }}>
-              <div style={{ fontFamily: BODY, fontSize: 12, fontWeight: 600, color: theme.ink, marginBottom: 2 }}>{w.label}</div>
-              <div style={{ fontFamily: MONO, fontSize: 9, color: theme.mute, marginBottom: 6 }}>{w.time}</div>
-              <div style={{ display: 'inline-block', fontFamily: MONO, fontSize: 8, fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase', color: s.bg, background: `${s.bg}22`, borderRadius: 99, padding: '2px 6px' }}>
-                {s.label}
-              </div>
-              {wHour && (
-                <div style={{ marginTop: 6 }}>
-                  <WeatherIcon code={wHour.weatherCode} size={14} color={s.bg} accent={s.bg} />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
       {/* Tasks header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1.5, textTransform: 'uppercase' }}>
@@ -325,6 +280,19 @@ export default function TasksPage() {
           }}>+</button>
         </div>
       </div>
+
+      {/* Overall progress bar */}
+      {allTasks.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div style={{ fontFamily: MONO, fontSize: 9, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase' }}>Overall progress</div>
+            <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: accent }}>{avgProgress}%</div>
+          </div>
+          <div style={{ height: 5, background: theme.card, borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${avgProgress}%`, background: accent, borderRadius: 99, transition: 'width 0.3s ease' }} />
+          </div>
+        </div>
+      )}
 
       {/* Add task form */}
       {showAdd && (
@@ -381,13 +349,13 @@ export default function TasksPage() {
 
             return (
               <div key={task.id} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
                 background: task.completed ? `${theme.card}80` : theme.card,
                 borderRadius: 16, padding: '12px 14px',
                 border: isOverdue ? `1.5px solid ${s.bg}40` : `1px solid ${theme.border}`,
                 opacity: task.completed ? 0.65 : 1,
                 transition: 'opacity 0.2s',
               }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {/* Checkbox */}
                 <button type="button" onClick={() => toggleComplete(task.id)} style={{
                   width: 22, height: 22, borderRadius: 999, flexShrink: 0,
@@ -445,6 +413,27 @@ export default function TasksPage() {
                 <button type="button" onClick={() => removeTask(task.id)}
                   style={{ width: 24, height: 24, borderRadius: 99, background: 'transparent', border: 'none', cursor: 'pointer', color: theme.muter, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, lineHeight: 1 }}
                   aria-label="Remove task">×</button>
+                </div>
+
+                {/* Progress pills */}
+                {!task.completed && (
+                  <div style={{ display: 'flex', gap: 4, marginTop: 10, flexWrap: 'wrap' }}>
+                    {([0, 25, 50, 75, 100] as const).map(p => {
+                      const active = (task.progress ?? 0) === p;
+                      return (
+                        <button key={p} type="button"
+                          onClick={() => editTask(task.id, { progress: p })}
+                          style={{
+                            padding: '3px 9px', borderRadius: 99, cursor: 'pointer',
+                            fontFamily: MONO, fontSize: 9, fontWeight: 700,
+                            background: active ? accent : 'transparent',
+                            color: active ? theme.bg : theme.mute,
+                            border: `1px solid ${active ? accent : theme.border}`,
+                          }}>{p}%</button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}

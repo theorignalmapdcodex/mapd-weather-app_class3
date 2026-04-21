@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTemperature } from "@/contexts/TemperatureContext";
 import { useWeather } from "@/contexts/WeatherContext";
-import { weatherCodeToCondition, CONDITION_LABELS } from "@/lib/copy";
+import { weatherCodeToCondition, getConditionLabel } from "@/lib/copy";
 import { CCHeader } from "@/components/CCHeader";
 import { WeatherIcon } from "@/components/WeatherIcon";
 import { geocodeCity } from "@/lib/geocode";
@@ -287,7 +287,7 @@ export default function PlacesPage() {
 
                 {w && (
                   <div style={{ fontFamily: MONO, fontSize: 11, color: theme.mute, marginBottom: 10 }}>
-                    {CONDITION_LABELS[condition]}
+                    {getConditionLabel(condition, false)}
                   </div>
                 )}
 

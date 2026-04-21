@@ -7,7 +7,7 @@ import { useTemperature } from "@/contexts/TemperatureContext";
 import { getWeatherByCoordinates } from "@/lib/getWeather";
 import { geocodeCity } from "@/lib/geocode";
 import { WeatherData } from "@/types/weather";
-import { weatherCodeToCondition, CONDITION_LABELS } from "@/lib/copy";
+import { weatherCodeToCondition, getConditionLabel } from "@/lib/copy";
 import { Brand } from "@/components/Brand";
 import { WeatherIcon } from "@/components/WeatherIcon";
 import { CCCard } from "@/components/CCCard";
@@ -74,7 +74,7 @@ export default function WeatherDetailPage() {
   }
 
   const condition = weatherCodeToCondition(weather.current.condition.code);
-  const conditionLabel = CONDITION_LABELS[condition];
+  const conditionLabel = getConditionLabel(condition, isNight);
 
   // Find hourly window
   const getHourlySlice = (count: number) => {

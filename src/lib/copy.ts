@@ -40,10 +40,14 @@ export function weatherCodeToCondition(code: number): ConditionKey {
   return 'cloudy';
 }
 
-export const CONDITION_LABELS: Record<ConditionKey, string> = {
-  sunny: 'Mostly Sunny',
-  cloudy: 'Partly Cloudy',
-  rain: 'Light Rain',
-  storm: 'Thunderstorm',
-  snow: 'Light Snow',
+export const CONDITION_LABELS: Record<ConditionKey, { day: string; night: string }> = {
+  sunny:  { day: 'Mostly Sunny',   night: 'Clear Night' },
+  cloudy: { day: 'Partly Cloudy',  night: 'Cloudy' },
+  rain:   { day: 'Light Rain',     night: 'Rainy Night' },
+  storm:  { day: 'Thunderstorm',   night: 'Storm Tonight' },
+  snow:   { day: 'Light Snow',     night: 'Snowing' },
 };
+
+export function getConditionLabel(condition: ConditionKey, isNight: boolean): string {
+  return CONDITION_LABELS[condition][isNight ? 'night' : 'day'];
+}

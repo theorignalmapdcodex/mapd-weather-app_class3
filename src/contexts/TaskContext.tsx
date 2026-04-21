@@ -11,9 +11,10 @@ export interface Task {
   minute: number;     // 0, 15, 30, 45
   completed: boolean;
   completedAt?: string;
+  progress?: number;  // 0-100
 }
 
-export type TaskUpdates = Partial<Pick<Task, 'label' | 'hour' | 'minute' | 'date'>>;
+export type TaskUpdates = Partial<Pick<Task, 'label' | 'hour' | 'minute' | 'date' | 'progress'>>;
 
 interface TaskContextType {
   tasks: Task[];

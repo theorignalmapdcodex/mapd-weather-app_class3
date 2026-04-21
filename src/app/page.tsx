@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTemperature } from "@/contexts/TemperatureContext";
 import { useWeather } from "@/contexts/WeatherContext";
-import { weatherCodeToCondition, getCopy, CONDITION_LABELS } from "@/lib/copy";
+import { weatherCodeToCondition, getCopy, getConditionLabel } from "@/lib/copy";
 import { CCHeader } from "@/components/CCHeader";
 import { MegaTemp } from "@/components/MegaTemp";
 import { WeatherIcon } from "@/components/WeatherIcon";
@@ -409,7 +409,7 @@ export default function NowPage() {
 
   // ─── Home screen ─────────────────────────────────────────────
   const condition = weatherCodeToCondition(weather.current.condition.code);
-  const conditionLabel = CONDITION_LABELS[condition];
+  const conditionLabel = getConditionLabel(condition, isNight);
   const copy = getCopy(personality, condition, isNight);
   const { illum, phaseName } = getMoonPhase();
   const hourlySlice = getHourlySlice();
