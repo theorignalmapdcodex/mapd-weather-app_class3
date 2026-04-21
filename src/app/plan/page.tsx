@@ -18,15 +18,25 @@ const BODY = 'var(--font-space-grotesk), "Space Grotesk", system-ui';
 function toC(f: number) { return Math.round((f - 32) * 5 / 9); }
 function displayTemp(f: number, unit: string) { return unit === 'C' ? toC(f) : f; }
 
-// Parse "HH:MM" (native time input value) → { hour, minute } snapped to 15min
-function parseTimeInput(val: string): { hour: number; minute: number } {
-  const [h, m] = val.split(':').map(Number);
-  const snapped = Math.round((m ?? 0) / 15) * 15;
-  return { hour: h ?? 9, minute: snapped >= 60 ? 0 : snapped };
+// Parse free-text time like "9:15 am", "9:15pm", "14:30", "9am" → { hour, minute }
+function parseTimeInput(val: string): { hour: number; minute: number } | null {
+  const cleaned = val.trim().toLowerCase().replace(/\s+/g, '');
+  const match = cleaned.match(/^(\d{1,2})(?::(\d{2}))?(am|pm)?$/);
+  if (!match) return null;
+  let hour = parseInt(match[1], 10);
+  const minute = parseInt(match[2] ?? '0', 10);
+  const meridiem = match[3];
+  if (meridiem === 'pm' && hour !== 12) hour += 12;
+  if (meridiem === 'am' && hour === 12) hour = 0;
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  const snapped = Math.round(minute / 15) * 15;
+  return { hour, minute: snapped >= 60 ? 0 : snapped };
 }
 
 function toTimeInputValue(hour: number, minute: number) {
-  return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  const ampm = hour < 12 ? 'AM' : 'PM';
+  const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${h12}:${minute.toString().padStart(2, '0')} ${ampm}`;
 }
 
 function localDateStr(tz?: string) { return todayStr(tz); }
@@ -101,12 +111,15 @@ function TaskForm({
 }) {
   const [label, setLabel] = useState(initialLabel);
   const [timeVal, setTimeVal] = useState(initialTime);
+  const [timeError, setTimeError] = useState(false);
   const [dateVal, setDateVal] = useState(initialDate ?? localDateStr(timezone));
 
   const handleSave = () => {
     if (!label.trim()) return;
-    const { hour, minute } = parseTimeInput(timeVal);
-    onSave(label.trim(), hour, minute, dateVal);
+    const parsed = parseTimeInput(timeVal);
+    if (!parsed) { setTimeError(true); return; }
+    setTimeError(false);
+    onSave(label.trim(), parsed.hour, parsed.minute, dateVal);
   };
 
   return (
@@ -141,17 +154,19 @@ function TaskForm({
             }}
           />
         </div>
-        {/* Time picker — native, shows as "9:00 AM" on mobile */}
+        {/* Time — free-text "9:15 AM" */}
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: MONO, fontSize: 9, color: theme.mute, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Time</div>
+          <div style={{ fontFamily: MONO, fontSize: 9, color: timeError ? '#E53935' : theme.mute, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+            {timeError ? 'Invalid — try "9:15 AM"' : 'Time'}
+          </div>
           <input
-            type="time"
-            step="900"
+            type="text"
             value={timeVal}
-            onChange={e => setTimeVal(e.target.value)}
+            onChange={e => { setTimeVal(e.target.value); setTimeError(false); }}
+            placeholder="9:15 AM"
             style={{
               width: '100%', padding: '8px 12px', borderRadius: 12,
-              border: `1px solid ${theme.border}`, background: theme.bg,
+              border: `1px solid ${timeError ? '#E53935' : theme.border}`, background: theme.bg,
               color: theme.ink, fontSize: 13, fontFamily: MONO,
               outline: 'none', boxSizing: 'border-box',
             }}

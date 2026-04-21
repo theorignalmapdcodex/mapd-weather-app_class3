@@ -8,7 +8,18 @@ export interface CurrentWeather {
   feelsLike: number;
   humidity: number;
   windSpeed: number;
+  windDirection?: number;   // degrees 0-360
+  uvIndex?: number;
+  dewPoint?: number;
+  pressure?: number;        // hPa
+  visibility?: number;      // meters
   condition: WeatherCondition;
+}
+
+export interface PollenData {
+  tree?: number;   // grains/m³
+  grass?: number;
+  weed?: number;
 }
 
 export interface HourlyForecast {
@@ -37,6 +48,7 @@ export interface WeatherData {
   hourly?: HourlyForecast[];
   sunrise?: string;
   sunset?: string;
+  pollen?: PollenData;
 }
 
 export const WEATHER_CODES: Record<number, string> = {

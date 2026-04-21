@@ -33,6 +33,168 @@ function getMoonPhase() {
   return { illum, phaseName };
 }
 
+function uvInfo(idx?: number) {
+  if (idx === undefined) return { label: '—', color: '#888' };
+  if (idx <= 2) return { label: 'Low', color: '#4CAF50' };
+  if (idx <= 5) return { label: 'Moderate', color: '#FFB300' };
+  if (idx <= 7) return { label: 'High', color: '#FF7043' };
+  if (idx <= 10) return { label: 'Very High', color: '#E53935' };
+  return { label: 'Extreme', color: '#9C27B0' };
+}
+
+function windDirLabel(deg?: number) {
+  if (deg === undefined) return '—';
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+  return dirs[Math.round(deg / 45) % 8];
+}
+
+function pollenLevel(val?: number): string {
+  if (!val || val < 1) return 'None';
+  if (val < 10) return 'Very Low';
+  if (val < 30) return 'Low';
+  if (val < 80) return 'Moderate';
+  if (val < 150) return 'High';
+  return 'Very High';
+}
+
+function pollenColor(val?: number, accent?: string): string {
+  if (!val || val < 1) return '#888';
+  if (val < 30) return '#4CAF50';
+  if (val < 80) return '#FFB300';
+  if (val < 150) return '#FF7043';
+  return accent ?? '#E53935';
+}
+
+// Fixed star positions to avoid hydration mismatch
+const STARS: [number, number, number, number][] = [
+  [42,18,1.2,0.9],[88,12,0.9,0.8],[130,30,1.1,0.85],[168,8,0.8,0.95],
+  [210,25,1.0,0.8],[255,16,1.3,0.9],[298,7,0.9,0.75],[345,20,1.1,0.85],
+  [378,38,0.8,0.7],[60,44,1.0,0.9],[148,50,0.9,0.8],[228,38,1.2,0.9],
+  [320,45,0.8,0.75],[44,60,0.9,0.85],[192,56,1.1,0.8],[268,51,0.8,0.7],
+  [385,28,1.0,0.9],[16,68,0.8,0.75],[100,64,0.9,0.8],[285,61,1.1,0.85],
+  [158,73,0.7,0.7],[332,70,0.9,0.8],[72,80,0.8,0.75],[408,58,1.0,0.9],
+  [182,86,0.7,0.65],[352,83,0.8,0.7],[232,90,0.6,0.65],[112,88,0.7,0.7],
+];
+
+function SceneCard({ isNight, condition }: { isNight: boolean; condition: string }) {
+  const skyNight   = ['#060D1F','#142750'];
+  const skyClear   = ['#4A90D9','#FFDBA0'];
+  const skyCloudy  = ['#7A8FA0','#C8D8E4'];
+  const skyRain    = ['#3A4D5A','#617888'];
+  const skySnow    = ['#8FA8BC','#DCE9F4'];
+
+  const [top, bottom] =
+    isNight ? skyNight :
+    condition === 'rain' || condition === 'storm' ? skyRain :
+    condition === 'snow' ? skySnow :
+    condition === 'cloudy' ? skyCloudy :
+    skyClear;
+
+  const groundColor = isNight ? '#060D18' : condition === 'rain' ? '#293840' : '#2B5A18';
+  const groundColor2 = isNight ? '#0A1428' : condition === 'rain' ? '#364E58' : '#3A7020';
+
+  return (
+    <div style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 12 }}>
+      <svg width="100%" viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
+        <defs>
+          <linearGradient id="sc-sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={top} />
+            <stop offset="100%" stopColor={bottom} />
+          </linearGradient>
+        </defs>
+
+        {/* Sky */}
+        <rect width="480" height="200" fill="url(#sc-sky)" />
+
+        {isNight ? (
+          <>
+            {/* Stars */}
+            {STARS.map(([x, y, r, op], i) => (
+              <circle key={i} cx={x} cy={y} r={r} fill="white" opacity={op} />
+            ))}
+            {/* Moon — crescent via two circles */}
+            <circle cx="400" cy="36" r="24" fill="#E8DDD0" />
+            <circle cx="410" cy="28" r="22" fill={top} />
+            {/* Ground hills */}
+            <path d="M0 155 Q60 138 130 148 Q200 158 270 142 Q340 128 410 140 Q445 146 480 138 L480 200 L0 200 Z" fill={groundColor} />
+            <path d="M0 165 Q50 158 110 162 Q200 168 290 158 Q370 150 480 160 L480 200 L0 200 Z" fill={groundColor2} />
+            {/* Trees */}
+            <path d="M72 150 L80 122 L88 150 Z" fill={groundColor} />
+            <path d="M84 150 L90 130 L96 150 Z" fill="#070F1E" />
+            <path d="M330 138 L338 108 L346 138 Z" fill={groundColor} />
+            {/* Person silhouette — looking up, tilted head */}
+            <ellipse cx="240" cy="133" rx="7" ry="7.5" fill={groundColor} />
+            <rect x="237" y="140" width="6" height="14" rx="3" fill={groundColor} />
+            <line x1="237" y1="146" x2="228" y2="152" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="243" y1="146" x2="250" y2="150" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="238" y1="154" x2="234" y2="166" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="243" y1="154" x2="247" y2="166" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
+          </>
+        ) : condition === 'rain' || condition === 'storm' ? (
+          <>
+            {/* Storm clouds */}
+            <ellipse cx="90" cy="46" rx="68" ry="32" fill="#4A5E6A" opacity="0.9" />
+            <ellipse cx="240" cy="30" rx="90" ry="38" fill="#3C505A" />
+            <ellipse cx="390" cy="50" rx="72" ry="30" fill="#4A5E6A" opacity="0.8" />
+            {/* Rain streaks */}
+            {[52,72,92,132,152,195,225,268,308,345,372,412].map((x, i) => (
+              <line key={i} x1={x} y1={70 + (i % 3) * 8} x2={x - 5} y2={90 + (i % 3) * 8}
+                stroke="rgba(175,210,230,0.65)" strokeWidth="1.5" />
+            ))}
+            {/* Ground */}
+            <path d="M0 158 Q120 148 240 155 Q360 162 480 150 L480 200 L0 200 Z" fill={groundColor} />
+            <path d="M0 168 Q100 162 200 166 Q340 172 480 164 L480 200 L0 200 Z" fill={groundColor2} />
+            {/* Person with umbrella */}
+            <ellipse cx="240" cy="136" rx="7" ry="7" fill={groundColor} />
+            <rect x="237" y="143" width="6" height="14" rx="3" fill={groundColor} />
+            <line x1="237" y1="148" x2="228" y2="154" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="243" y1="148" x2="250" y2="152" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="238" y1="157" x2="234" y2="168" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="243" y1="157" x2="247" y2="168" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
+            {/* Umbrella */}
+            <path d="M226 130 Q240 118 254 130 Q247 130 240 128 Q233 130 226 130 Z" fill="#FF7043" opacity="0.9" />
+            <line x1="240" y1="130" x2="240" y2="142" stroke="#FF7043" strokeWidth="1.8" strokeLinecap="round" opacity="0.9" />
+          </>
+        ) : (
+          <>
+            {/* Sun with soft glow */}
+            <circle cx="380" cy="46" r="44" fill="#FFDD60" opacity="0.18" />
+            <circle cx="380" cy="46" r="32" fill="#FFDD60" opacity="0.35" />
+            <circle cx="380" cy="46" r="22" fill="#FFCA28" />
+            {/* Clouds if partly cloudy */}
+            {condition === 'cloudy' && (
+              <>
+                <ellipse cx="100" cy="58" rx="62" ry="24" fill="rgba(255,255,255,0.55)" />
+                <ellipse cx="260" cy="40" rx="78" ry="28" fill="rgba(255,255,255,0.45)" />
+              </>
+            )}
+            {/* Rolling hills */}
+            <path d="M0 152 Q80 132 165 144 Q250 156 330 138 Q395 124 480 136 L480 200 L0 200 Z" fill={groundColor} />
+            <path d="M0 162 Q70 155 145 160 Q240 167 320 155 Q400 145 480 158 L480 200 L0 200 Z" fill={groundColor2} />
+            {/* Trees */}
+            <path d="M68 150 L76 122 L84 150 Z" fill={groundColor} />
+            <path d="M80 150 L86 132 L92 150 Z" fill="#245018" />
+            <path d="M318 136 L327 107 L336 136 Z" fill={groundColor} />
+            {/* Person */}
+            <ellipse cx="240" cy="132" rx="7" ry="7.5" fill="#1A1A1A" />
+            <rect x="237" y="139" width="6" height="14" rx="3" fill="#1A1A1A" />
+            <line x1="237" y1="145" x2="228" y2="151" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="243" y1="145" x2="252" y2="151" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="238" y1="153" x2="234" y2="164" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" />
+            <line x1="243" y1="153" x2="247" y2="164" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" />
+          </>
+        )}
+      </svg>
+    </div>
+  );
+}
+
+const POPULAR_CITIES = [
+  'New York','London','Tokyo','Paris','Dubai','Lagos','Sydney','Toronto',
+  'Accra','Berlin','Singapore','São Paulo','Mumbai','Amsterdam','Nairobi',
+  'Mexico City','Seoul','Cairo','Johannesburg','Bangkok','Stockholm','Rome',
+];
+
 export default function NowPage() {
   const { theme, accent, personality } = useTheme();
   const { unit } = useTemperature();
@@ -51,7 +213,6 @@ export default function NowPage() {
     const saved = localStorage.getItem("homeLocation");
     if (!saved) {
       setShowOnboarding(true);
-      // Try geolocation
       if (typeof navigator !== 'undefined' && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async pos => {
           try {
@@ -77,6 +238,13 @@ export default function NowPage() {
     setShowOnboarding(false);
     await loadCity(cityInput.trim());
     setCityInput("");
+    setSearching(false);
+  }
+
+  async function handlePopularCity(city: string) {
+    setShowOnboarding(false);
+    setSearching(true);
+    await loadCity(city);
     setSearching(false);
   }
 
@@ -111,7 +279,10 @@ export default function NowPage() {
 
   const pageStyle = {
     background: theme.bg, minHeight: '100dvh',
-    padding: '0 16px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)', color: theme.ink, fontFamily: BODY,
+    padding: '0 16px',
+    paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)',
+    paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)',
+    color: theme.ink, fontFamily: BODY,
   };
 
   // ─── Onboarding ─────────────────────────────────────────────
@@ -155,10 +326,7 @@ export default function NowPage() {
               <div style={{ fontFamily: DISPLAY, fontSize: 'clamp(44px, 14vw, 64px)', fontWeight: 800, letterSpacing: -2, lineHeight: 0.9, textAlign: 'center', marginBottom: 14 }}>
                 Your city.
               </div>
-              <div style={{ fontSize: 14, color: theme.mute, textAlign: 'center', maxWidth: 280, margin: '0 auto 28px', lineHeight: 1.45 }}>
-                Tell us where you are. We&apos;ll give you the forecast for right here, right now.
-              </div>
-              <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
                 <input
                   value={cityInput}
                   onChange={e => setCityInput(e.target.value)}
@@ -178,6 +346,30 @@ export default function NowPage() {
                   {searching ? 'Finding…' : 'Use this location →'}
                 </button>
               </form>
+
+              {/* Popular cities */}
+              <div style={{ fontFamily: MONO, fontSize: 9, color: theme.mute, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
+                Or pick a city
+              </div>
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center',
+              }}>
+                {POPULAR_CITIES.map(city => (
+                  <button
+                    key={city}
+                    type="button"
+                    onClick={() => handlePopularCity(city)}
+                    style={{
+                      padding: '6px 14px', borderRadius: 999,
+                      background: theme.chip, color: theme.chipText,
+                      border: `1px solid ${theme.border}`,
+                      fontFamily: MONO, fontSize: 10, fontWeight: 700,
+                      cursor: 'pointer', letterSpacing: 0.3,
+                      transition: 'background 0.15s',
+                    }}
+                  >{city}</button>
+                ))}
+              </div>
             </>
           )}
         </div>
@@ -193,8 +385,7 @@ export default function NowPage() {
         <div style={{ marginTop: 40, fontFamily: MONO, fontSize: 11, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase' }}>
           Fetching your sky…
         </div>
-        <div style={{ width: 40, height: 40, borderRadius: 99, border: `3px solid ${theme.border}`, borderTopColor: accent, animation: 'spin 0.8s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ width: 40, height: 40, borderRadius: 99, border: `3px solid ${theme.border}`, borderTopColor: accent, animation: 'cc-spin 0.8s linear infinite' }} />
       </div>
     );
   }
@@ -232,6 +423,10 @@ export default function NowPage() {
     } catch { return ''; }
   })();
 
+  const uv = uvInfo(weather.current.uvIndex);
+  const month = new Date().getMonth(); // 0-11
+  const isSpring = month >= 2 && month <= 5;
+
   return (
     <div style={pageStyle}>
       <CCHeader />
@@ -266,34 +461,18 @@ export default function NowPage() {
         {copy}
       </div>
 
-      {/* H / L / Feels + updated */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20, fontFamily: MONO, fontSize: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+      {/* H / L / Feels */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16, fontFamily: MONO, fontSize: 12, alignItems: 'center', flexWrap: 'wrap' }}>
         <div><span style={{ color: theme.mute }}>H </span><b>{displayTemp(weather.forecast[0]?.maxTemp ?? weather.current.temperature, unit)}°</b></div>
         <div><span style={{ color: theme.mute }}>L </span><b>{displayTemp(weather.forecast[0]?.minTemp ?? weather.current.temperature, unit)}°</b></div>
         <div><span style={{ color: theme.mute }}>FEELS </span><b>{displayTemp(weather.current.feelsLike, unit)}°</b></div>
         <div style={{ marginLeft: 'auto', color: accent, fontWeight: 700, fontSize: 10, letterSpacing: 0.5 }}>LIVE</div>
       </div>
 
-      {/* Globe card */}
-      <CCCard noPad style={{ marginBottom: 12, position: 'relative' }}>
-        <div style={{ padding: '14px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase' }}>Your position</div>
-          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.ink, letterSpacing: 1 }}>
-            {weather.latitude.toFixed(2)}°{weather.latitude >= 0 ? 'N' : 'S'}, {Math.abs(weather.longitude).toFixed(2)}°{weather.longitude >= 0 ? 'E' : 'W'}
-          </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0 32px' }}>
-          <DottedGlobe size={200} color={theme.ink} accent={accent} pinLat={pinLat} pinLon={pinLon} />
-        </div>
-        <div style={{ position: 'absolute', left: 16, bottom: 12, fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 0.5 }}>
-          SUNRISE {formatTime(weather.sunrise)}
-        </div>
-        <div style={{ position: 'absolute', right: 16, bottom: 12, fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 0.5 }}>
-          SUNSET {formatTime(weather.sunset)}
-        </div>
-      </CCCard>
+      {/* Scene illustration */}
+      <SceneCard isNight={isNight} condition={condition} />
 
-      {/* 12-hour strip → links to /hourly */}
+      {/* 12-hour strip */}
       {hourlySlice.length > 0 && (
         <Link href="/hourly" style={{ textDecoration: 'none' }}>
           <CCCard style={{ marginBottom: 12 }}>
@@ -317,7 +496,7 @@ export default function NowPage() {
         </Link>
       )}
 
-      {/* 7-day teaser → links to /7-day */}
+      {/* 7-day teaser */}
       <Link href="/7-day" style={{ textDecoration: 'none' }}>
         <CCCard noPad style={{ marginBottom: 12 }}>
           <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', borderBottom: `1px solid ${theme.border}` }}>
@@ -340,8 +519,154 @@ export default function NowPage() {
         </CCCard>
       </Link>
 
-      {/* Widgets row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+      {/* ── Metrics grid ─────────────────────────────────── */}
+
+      {/* Pollen — show during spring or if values are non-zero */}
+      {weather.pollen && (isSpring || (weather.pollen.tree ?? 0) + (weather.pollen.grass ?? 0) + (weather.pollen.weed ?? 0) > 0) && (
+        <CCCard style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 14 }}>Pollen</div>
+          <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+            {[
+              { label: 'Tree', val: weather.pollen.tree },
+              { label: 'Grass', val: weather.pollen.grass },
+              { label: 'Ragweed', val: weather.pollen.weed },
+            ].map(({ label, val }) => (
+              <div key={label} style={{ textAlign: 'center' }}>
+                {/* Leaf icon */}
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ marginBottom: 4 }}>
+                  <path d="M12 22C12 22 3 14 3 8a9 9 0 0 1 18 0c0 6-9 14-9 14Z"
+                    fill={pollenColor(val, accent)} opacity="0.85" />
+                  <line x1="12" y1="22" x2="12" y2="10" stroke={pollenColor(val, accent)} strokeWidth="1.4" opacity="0.6" />
+                </svg>
+                <div style={{ fontFamily: MONO, fontSize: 9, color: theme.mute, marginBottom: 3 }}>{label}</div>
+                <div style={{ fontFamily: BODY, fontWeight: 700, fontSize: 13, color: pollenColor(val, accent) }}>
+                  {pollenLevel(val)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CCCard>
+      )}
+
+      {/* 2-col metrics */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+
+        {/* UV Index */}
+        <CCCard>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>UV Index</div>
+          <div style={{ fontFamily: BODY, fontSize: 11, color: theme.mute, marginBottom: 6 }}>{uv.label} right now</div>
+          <div style={{ fontFamily: DISPLAY, fontSize: 38, fontWeight: 800, lineHeight: 1, color: uv.color }}>
+            {weather.current.uvIndex ?? '—'}
+          </div>
+          {/* Gauge bar */}
+          <div style={{ marginTop: 10, height: 5, borderRadius: 99, background: `linear-gradient(90deg, #4CAF50, #FFB300, #FF7043, #E53935, #9C27B0)`, position: 'relative' }}>
+            <div style={{
+              position: 'absolute', top: -3, width: 11, height: 11, borderRadius: 99,
+              background: uv.color, border: `2px solid ${theme.bg}`,
+              left: `${Math.min(((weather.current.uvIndex ?? 0) / 12) * 100, 95)}%`,
+              transform: 'translateX(-50%)',
+            }} />
+          </div>
+        </CCCard>
+
+        {/* Wind */}
+        <CCCard>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>Wind</div>
+          <div style={{ fontFamily: BODY, fontSize: 11, color: theme.mute, marginBottom: 4 }}>
+            {weather.current.windSpeed <= 5 ? "It's calm" :
+             weather.current.windSpeed <= 15 ? 'Light breeze' :
+             weather.current.windSpeed <= 25 ? 'Moderate wind' : 'Strong wind'}
+          </div>
+          {/* Compass */}
+          <div style={{ position: 'relative', width: 56, height: 56, margin: '4px 0' }}>
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="26" stroke={theme.border} strokeWidth="1.5" fill="none" />
+              {['N','E','S','W'].map((d, i) => (
+                <text key={d} x={28 + [0,20,0,-20][i]} y={28 + [-20,5,24,5][i]}
+                  textAnchor="middle" fill={theme.mute} fontSize="8" fontFamily="monospace">{d}</text>
+              ))}
+              {/* Needle */}
+              <line
+                x1="28" y1="28"
+                x2={28 + 16 * Math.sin(((weather.current.windDirection ?? 0) * Math.PI) / 180)}
+                y2={28 - 16 * Math.cos(((weather.current.windDirection ?? 0) * Math.PI) / 180)}
+                stroke={accent} strokeWidth="2.5" strokeLinecap="round"
+              />
+              <circle cx="28" cy="28" r="3" fill={accent} />
+            </svg>
+          </div>
+          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 18, lineHeight: 1 }}>
+            {weather.current.windSpeed} <span style={{ fontSize: 11, fontFamily: MONO, color: theme.mute }}>{unit === 'C' ? 'km/h' : 'mph'}</span>
+          </div>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, marginTop: 2 }}>
+            from {windDirLabel(weather.current.windDirection)}
+          </div>
+        </CCCard>
+
+        {/* Humidity */}
+        <CCCard>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>Humidity</div>
+          <div style={{ fontFamily: BODY, fontSize: 11, color: theme.mute, marginBottom: 6 }}>
+            {weather.current.humidity < 40 ? 'The air is dry' : weather.current.humidity < 60 ? 'Similar to yesterday' : weather.current.humidity < 80 ? 'Fairly humid' : 'Very humid'}
+          </div>
+          <div style={{ fontFamily: DISPLAY, fontSize: 38, fontWeight: 800, lineHeight: 1 }}>{weather.current.humidity}</div>
+          <div style={{ fontSize: 13, marginTop: 2, fontFamily: MONO, color: theme.mute }}>%</div>
+          {/* Bar */}
+          <div style={{ marginTop: 8, height: 5, borderRadius: 99, background: theme.border, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${weather.current.humidity}%`, background: accent, borderRadius: 99, transition: 'width 0.5s' }} />
+          </div>
+        </CCCard>
+
+        {/* Dew Point */}
+        <CCCard>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>Dew Point</div>
+          <div style={{ fontFamily: BODY, fontSize: 11, color: theme.mute, marginBottom: 10 }}>
+            {(weather.current.dewPoint ?? 0) < 32 ? 'The air is very dry' :
+             (weather.current.dewPoint ?? 0) < 50 ? 'Pleasant conditions' :
+             (weather.current.dewPoint ?? 0) < 60 ? 'Getting muggy' : 'Very muggy'}
+          </div>
+          <div style={{ fontFamily: DISPLAY, fontSize: 38, fontWeight: 800, lineHeight: 1 }}>
+            {weather.current.dewPoint !== undefined ? displayTemp(weather.current.dewPoint, unit) : '—'}
+          </div>
+          <div style={{ fontSize: 13, marginTop: 2, fontFamily: MONO, color: theme.mute }}>°{unit}</div>
+        </CCCard>
+
+        {/* Pressure */}
+        <CCCard>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>Pressure</div>
+          <div style={{ fontFamily: BODY, fontSize: 11, color: theme.mute, marginBottom: 10 }}>
+            {(weather.current.pressure ?? 1013) > 1020 ? 'Currently rising' :
+             (weather.current.pressure ?? 1013) > 1010 ? 'Holding steady' : 'Currently falling'}
+          </div>
+          <div style={{ fontFamily: DISPLAY, fontSize: 32, fontWeight: 800, lineHeight: 1 }}>
+            {weather.current.pressure ?? '—'}
+          </div>
+          <div style={{ fontSize: 11, marginTop: 2, fontFamily: MONO, color: theme.mute }}>hPa</div>
+        </CCCard>
+
+        {/* Visibility */}
+        <CCCard>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>Visibility</div>
+          <div style={{ fontFamily: BODY, fontSize: 11, color: theme.mute, marginBottom: 10 }}>
+            {(weather.current.visibility ?? 0) >= 10000 ? 'Unlimited visibility' :
+             (weather.current.visibility ?? 0) >= 5000 ? 'Good visibility' :
+             (weather.current.visibility ?? 0) >= 2000 ? 'Moderate visibility' : 'Poor visibility'}
+          </div>
+          <div style={{ fontFamily: DISPLAY, fontSize: 32, fontWeight: 800, lineHeight: 1 }}>
+            {weather.current.visibility !== undefined
+              ? unit === 'C'
+                ? (weather.current.visibility / 1000).toFixed(1)
+                : (weather.current.visibility / 1609).toFixed(1)
+              : '—'}
+          </div>
+          <div style={{ fontSize: 11, marginTop: 2, fontFamily: MONO, color: theme.mute }}>
+            {unit === 'C' ? 'km' : 'mi'}
+          </div>
+        </CCCard>
+      </div>
+
+      {/* Moon + Globe row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
         <CCCard>
           <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>Moon</div>
           <div style={{ position: 'relative', width: 44, height: 44, marginBottom: 6 }}>
@@ -351,15 +676,27 @@ export default function NowPage() {
           <div style={{ fontSize: 13, fontWeight: 600, fontFamily: BODY }}>{phaseName}</div>
           <div style={{ fontSize: 11, color: theme.mute, marginTop: 2, fontFamily: MONO }}>{illum}% lit</div>
         </CCCard>
-        <CCCard>
-          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>Humidity</div>
-          <div style={{ fontFamily: DISPLAY, fontSize: 42, fontWeight: 800, lineHeight: 1 }}>{weather.current.humidity}</div>
-          <div style={{ fontSize: 13, marginTop: 4, fontFamily: BODY }}>%</div>
-          <div style={{ fontSize: 11, color: theme.mute, marginTop: 4, fontFamily: MONO }}>
-            {weather.current.humidity < 40 ? 'Dry' : weather.current.humidity < 70 ? 'Comfortable' : 'Humid'}
+        <CCCard style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 }}>Sunrise / Sunset</div>
+          <div style={{ fontFamily: MONO, fontSize: 11, color: theme.ink, textAlign: 'center', lineHeight: 1.8 }}>
+            <div>↑ {formatTime(weather.sunrise)}</div>
+            <div>↓ {formatTime(weather.sunset)}</div>
           </div>
         </CCCard>
       </div>
+
+      {/* Globe */}
+      <CCCard noPad style={{ marginBottom: 12, position: 'relative' }}>
+        <div style={{ padding: '14px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.mute, letterSpacing: 1, textTransform: 'uppercase' }}>Your position</div>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: theme.ink, letterSpacing: 1 }}>
+            {weather.latitude.toFixed(2)}°{weather.latitude >= 0 ? 'N' : 'S'}, {Math.abs(weather.longitude).toFixed(2)}°{weather.longitude >= 0 ? 'E' : 'W'}
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0 16px' }}>
+          <DottedGlobe size={200} color={theme.ink} accent={accent} pinLat={pinLat} pinLon={pinLon} />
+        </div>
+      </CCCard>
 
       {/* Plan teaser */}
       <Link href="/plan" style={{ textDecoration: 'none' }}>
