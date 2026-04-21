@@ -41,16 +41,22 @@ export default function PlacesPage() {
   const [cityAutoPhotos, setCityAutoPhotos] = useState<Record<string, string>>({});
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  const fetchUnsplashPhoto = async (cityName: string) => {
+  const fetchUnsplashPhoto = async (cityName: string): Promise<string | null> => {
     const key = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
-    if (!key) return;
+    if (!key) {
+      console.warn('[CityCast] NEXT_PUBLIC_UNSPLASH_ACCESS_KEY not set — restart dev server after adding .env.local');
+      return null;
+    }
     try {
       const r = await fetch(
         `https://api.unsplash.com/photos/random?query=${encodeURIComponent(cityName + ' city')}&orientation=landscape&client_id=${key}`
       );
-      if (!r.ok) return;
+      if (!r.ok) {
+        console.warn(`[CityCast] Unsplash fetch failed for "${cityName}": ${r.status}`);
+        return null;
+      }
       const d = await r.json();
-      const url = d.urls?.regular ?? d.urls?.small;
+      const url = d.urls?.regular ?? d.urls?.small ?? null;
       if (url) {
         setCityAutoPhotos(prev => {
           const next = { ...prev, [cityName]: url };
@@ -58,7 +64,11 @@ export default function PlacesPage() {
           return next;
         });
       }
-    } catch { /* ignore */ }
+      return url;
+    } catch (err) {
+      console.warn(`[CityCast] Unsplash error for "${cityName}":`, err);
+      return null;
+    }
   };
 
   useEffect(() => {
@@ -73,15 +83,19 @@ export default function PlacesPage() {
       initial.unshift({ name: homeWeather.city });
     }
     setCities(initial);
-    initial.forEach(c => {
-      fetchCityWeather(c.name);
-      // Fetch Unsplash photo if not already cached
-      const autoCache = localStorage.getItem('cc-unsplash-photos');
-      const cached = autoCache ? JSON.parse(autoCache) : {};
-      if (!cached[c.name]) fetchUnsplashPhoto(c.name);
-    });
+    initial.forEach(c => fetchCityWeather(c.name));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homeWeather?.city]);
+
+  // Fetch Unsplash photos for any city missing one in state
+  useEffect(() => {
+    cities.forEach(c => {
+      if (!cityPhotos[c.name] && !cityAutoPhotos[c.name]) {
+        fetchUnsplashPhoto(c.name);
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cities]);
 
   const fetchCityWeather = async (name: string) => {
     setCityWeathers(prev => {
@@ -155,7 +169,7 @@ export default function PlacesPage() {
 
   const pageStyle = {
     background: theme.bg, minHeight: '100dvh',
-    padding: '0 16px', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 16px)', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)', color: theme.ink, fontFamily: BODY,
+    padding: '0 16px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)', color: theme.ink, fontFamily: BODY,
   };
 
   return (
@@ -229,8 +243,7 @@ export default function PlacesPage() {
               {/* Photo panel */}
               <div style={{
                 width: 90, flexShrink: 0, position: 'relative',
-                background: photo ? 'transparent' : grad,
-                backgroundImage: photo ? `url(${photo})` : undefined,
+                backgroundImage: photo ? `url(${photo})` : grad,
                 backgroundSize: 'cover', backgroundPosition: 'center',
                 minHeight: 110,
               }}>

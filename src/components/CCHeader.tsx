@@ -17,7 +17,15 @@ export function CCHeader() {
   return (
     <>
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24,
+        position: 'sticky', top: 0, zIndex: 100,
+        background: theme.bg,
+        marginLeft: -16, marginRight: -16,
+        paddingLeft: 16, paddingRight: 16,
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+        paddingBottom: 16,
+      }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         {/* Clickable logo → home */}
         <Link href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
@@ -76,7 +84,7 @@ export function CCHeader() {
       {locationMismatch && (
         <div style={{
           background: `${accent}18`, border: `1.5px solid ${accent}40`,
-          borderRadius: 14, padding: '12px 14px', marginBottom: 16,
+          borderRadius: 14, padding: '12px 14px', marginTop: 8,
           display: 'flex', gap: 10, alignItems: 'center',
         }}>
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}>
@@ -100,6 +108,7 @@ export function CCHeader() {
           }}>No</button>
         </div>
       )}
+      </div>
     </>
   );
 }
