@@ -82,6 +82,7 @@ export default function NowPage() {
   const [searching, setSearching] = useState(false);
   const [isNight, setIsNight] = useState(false);
   const [nowLabel, setNowLabel] = useState("right now");
+  const [cityHour, setCityHour] = useState<number | undefined>(undefined);
 
   // Recalculate isNight using the city's timezone once weather loads
   useEffect(() => {
@@ -93,6 +94,7 @@ export default function NowPage() {
         }).slice(0, 2), 10
       );
       setIsNight(h < 6 || h >= 20);
+      setCityHour(h);
       setNowLabel(
         h < 6  ? 'late night'     :
         h < 12 ? 'this morning'   :
@@ -337,7 +339,7 @@ export default function NowPage() {
       <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', marginBottom: 16, height: 'clamp(275px, 74vw, 340px)' }}>
 
         {/* Background scene */}
-        <SceneCard isNight={isNight} condition={condition} />
+        <SceneCard isNight={isNight} condition={condition} hour={cityHour} />
 
         {/* Gradient for text legibility */}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, transparent 42%, rgba(0,0,0,0.48) 100%)' }} />

@@ -91,3 +91,45 @@ button { cursor: pointer; }
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.35; transform: scale(0.65); }
 }
+
+/* ─── Scene rain ─────────────────────────────────────────── */
+@keyframes cc-rain-fall {
+  0%   { transform: translateY(-18px); opacity: 0; }
+  10%  { opacity: 0.7; }
+  90%  { opacity: 0.7; }
+  100% { transform: translateY(60px); opacity: 0; }
+}
+
+/* ─── Scene snow ─────────────────────────────────────────── */
+@keyframes cc-snow-fall {
+  0%   { transform: translate(0, -12px) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.85; }
+  50%  { transform: translate(6px, 30px) rotate(180deg); }
+  90%  { opacity: 0.8; }
+  100% { transform: translate(-4px, 65px) rotate(360deg); opacity: 0; }
+}
+
+/* ─── Scene cloud drift ──────────────────────────────────── */
+@keyframes cc-cloud-drift {
+  0%   { transform: translateX(0px); }
+  50%  { transform: translateX(-18px); }
+  100% { transform: translateX(0px); }
+}
+
+/* ─── Scene sun glow pulse ───────────────────────────────── */
+@keyframes cc-sun-glow {
+  0%, 100% { opacity: 0.15; }
+  50%       { opacity: 0.35; }
+}
+
+/* ─── Scene character walk-in ────────────────────────────── */
+@keyframes cc-walk-in {
+  0%   { transform: translateX(160px); }
+  100% { transform: translateX(0px); }
+}
+
+/* ─── Scene arm raise ────────────────────────────────────── */
+@keyframes cc-arm-raise {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(-65deg); }
+}
