@@ -43,97 +43,6 @@ function Cloud({ w = 100, dark = false, night = false }: { w?: number; dark?: bo
 }
 
 // ─────────────────────────────────────────────────────────────
-// Character SVG — walking, condition-aware outfit
-// ─────────────────────────────────────────────────────────────
-function Character({ night, condition }: { night: boolean; condition: string }) {
-  const wet = condition === 'rain' || condition === 'storm';
-  const coat = condition === 'snow' ? '#7B5CE6'
-             : wet                  ? '#E07B3D'
-             : night                ? '#3B5BA8'
-             :                        '#1A1A1A';
-  const skin  = '#E8B98A';
-  const hair  = '#2A1810';
-  const pants = condition === 'snow' ? '#3A4055' : '#1A1A1A';
-
-  return (
-    <svg width="62" height="84" viewBox="0 0 62 84" style={{ overflow: 'visible' }}>
-      {/* Umbrella */}
-      {wet && (
-        <g transform="translate(31, 12)" style={{
-          transformOrigin: '0px 8px',
-          animation: 'wx-umbrella-sway 2s ease-in-out infinite',
-        }}>
-          <path d="M-26 8 Q-26 -10 0 -10 Q26 -10 26 8 Z" fill="#1A1A1A" stroke="#000" strokeWidth="0.8"/>
-          <path d="M-26 8 L0 -10 M-13 8 L0 -10 M0 8 L0 -10 M13 8 L0 -10 M26 8 L0 -10"
-                stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" fill="none"/>
-          <circle cx="0" cy="-10" r="1.5" fill="#1A1A1A"/>
-          <line x1="0" y1="8" x2="0" y2="36" stroke="#1A1A1A" strokeWidth="2" strokeLinecap="round"/>
-          <path d="M0 36 Q0 40 -3 40" stroke="#1A1A1A" strokeWidth="2" fill="none" strokeLinecap="round"/>
-        </g>
-      )}
-
-      {/* Back leg */}
-      <g transform="translate(28, 56)" style={{
-        transformOrigin: '0px 0px',
-        animation: 'wx-leg-back 0.8s ease-in-out infinite',
-      }}>
-        <rect x="-3" y="0" width="6" height="20" rx="2" fill={pants}/>
-        <rect x="-4" y="18" width="8" height="4" rx="1" fill="#0A0A0A"/>
-      </g>
-
-      {/* Body / coat */}
-      <path d="M22 36 Q19 30 22 26 L40 26 Q43 30 40 36 L42 56 Q42 60 38 60 L24 60 Q20 60 20 56 Z"
-            fill={coat} stroke="#000" strokeWidth="0.5" strokeOpacity="0.3"/>
-
-      {/* Front leg */}
-      <g transform="translate(34, 56)" style={{
-        transformOrigin: '0px 0px',
-        animation: 'wx-leg-front 0.8s ease-in-out infinite',
-      }}>
-        <rect x="-3" y="0" width="6" height="20" rx="2" fill={pants}/>
-        <rect x="-4" y="18" width="8" height="4" rx="1" fill="#0A0A0A"/>
-      </g>
-
-      {/* Arm holding umbrella / swinging */}
-      {wet ? (
-        <path d="M28 32 Q24 26 30 18 Q31 16 32 16" stroke={coat} strokeWidth="5" fill="none" strokeLinecap="round"/>
-      ) : (
-        <path d="M28 32 Q24 40 26 50" stroke={coat} strokeWidth="5" fill="none" strokeLinecap="round"/>
-      )}
-      <path d="M36 32 Q40 40 38 50" stroke={coat} strokeWidth="5" fill="none" strokeLinecap="round"/>
-
-      {/* Head */}
-      <circle cx="31" cy="22" r="7" fill={skin}/>
-      {/* Hair */}
-      <path d="M24 19 Q24 13 31 13 Q38 13 38 19 Q38 17 36 17 Q34 18 31 18 Q28 18 26 17 Q24 17 24 19 Z" fill={hair}/>
-
-      {/* Snow beanie */}
-      {condition === 'snow' && (
-        <>
-          <ellipse cx="31" cy="14" rx="9" ry="3" fill="#7B5CE6"/>
-          <path d="M22 14 Q22 8 31 8 Q40 8 40 14 Z" fill="#7B5CE6"/>
-          <circle cx="31" cy="6" r="2.5" fill="#fff"/>
-        </>
-      )}
-
-      {/* Eyes */}
-      <circle cx="29" cy="22" r="0.8" fill="#1A1A1A"/>
-      <circle cx="33" cy="22" r="0.8" fill="#1A1A1A"/>
-
-      {/* Sunglasses (sunny day) */}
-      {!night && condition === 'sunny' && (
-        <>
-          <rect x="26" y="20.5" width="4" height="2.5" rx="1" fill="#1A1A1A"/>
-          <rect x="32" y="20.5" width="4" height="2.5" rx="1" fill="#1A1A1A"/>
-          <line x1="30" y1="21.5" x2="32" y2="21.5" stroke="#1A1A1A" strokeWidth="0.6"/>
-          <path d="M29 25 Q31 27 33 25" stroke="#1A1A1A" strokeWidth="0.8" fill="none" strokeLinecap="round"/>
-        </>
-      )}
-    </svg>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
 // Scenery — hills + ground + puddles/snow
 // ─────────────────────────────────────────────────────────────
 function Scenery({ condition, night }: { condition: string; night: boolean }) {
@@ -399,14 +308,6 @@ export function SceneCard({ isNight: night, condition }: SceneCardProps) {
 
         {/* Scenery (hills + ground) */}
         <Scenery condition={cond} night={night}/>
-
-        {/* Walking character — slides in from right */}
-        <div style={{
-          position: 'absolute', bottom: 38, right: 24,
-          animation: 'wx-walk-in 1.8s cubic-bezier(0.25,0.46,0.45,0.94) forwards',
-        }}>
-          <Character night={night} condition={cond}/>
-        </div>
 
       </div>
     </div>
