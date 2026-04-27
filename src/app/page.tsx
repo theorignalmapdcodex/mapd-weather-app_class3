@@ -336,13 +336,16 @@ export default function NowPage() {
       <CCHeader />
 
       {/* ── Hero: scene animation + all weather info overlaid ── */}
-      <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', marginBottom: 16, height: 'clamp(275px, 74vw, 340px)' }}>
+      <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', marginBottom: 16, height: 'clamp(380px, 97vw, 460px)' }}>
 
         {/* Background scene */}
         <SceneCard isNight={isNight} condition={condition} hour={cityHour} />
 
-        {/* Gradient for text legibility */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, transparent 42%, rgba(0,0,0,0.48) 100%)' }} />
+        {/* Gradient for text legibility — lighter on day skies so black text reads cleanly */}
+        <div style={{ position: 'absolute', inset: 0, background: heroOnDark
+          ? 'linear-gradient(to bottom, rgba(0,0,0,0.28) 0%, transparent 42%, rgba(0,0,0,0.48) 100%)'
+          : 'linear-gradient(to bottom, rgba(0,0,0,0.06) 0%, transparent 38%, rgba(0,0,0,0.12) 100%)'
+        }} />
 
         {/* Overlay content */}
         <div style={{ position: 'absolute', inset: 0, padding: '16px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
@@ -364,11 +367,10 @@ export default function NowPage() {
 
           {/* Bottom: temp + icon + label + copy + H/L/Feels */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 4 }}>
+            <div style={{ marginBottom: 4 }}>
               <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 'clamp(68px, 21vw, 104px)', lineHeight: 0.85, letterSpacing: '-0.05em', color: heroInk }}>
                 {displayTemp(weather.current.temperature, unit)}<span style={{ fontSize: 'clamp(26px, 7.5vw, 36px)', marginLeft: 2, letterSpacing: -1 }}>°{unit}</span>
               </div>
-              <WeatherIcon type={condition} night={isNight} size={52} color={heroInk} accent={heroOnDark ? 'rgba(255,255,255,0.9)' : accent} />
             </div>
             <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 20, letterSpacing: -0.5, color: heroInk, marginBottom: 3 }}>
               {conditionLabel}.
