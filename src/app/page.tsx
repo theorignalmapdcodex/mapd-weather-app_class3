@@ -10,6 +10,7 @@ import { CCHeader } from "@/components/CCHeader";
 import { WeatherIcon } from "@/components/WeatherIcon";
 import { CCCard } from "@/components/CCCard";
 import { DottedGlobe, latLonToPinCoords } from "@/components/DottedGlobe";
+import { SceneCard } from "@/components/SceneCard";
 
 const MONO = 'var(--font-jetbrains-mono), "JetBrains Mono", monospace';
 const DISPLAY = 'var(--font-syne), "Syne", system-ui';
@@ -64,128 +65,6 @@ function pollenColor(val?: number, accent?: string): string {
   return accent ?? '#E53935';
 }
 
-// Fixed star positions to avoid hydration mismatch
-const STARS: [number, number, number, number][] = [
-  [42,18,1.2,0.9],[88,12,0.9,0.8],[130,30,1.1,0.85],[168,8,0.8,0.95],
-  [210,25,1.0,0.8],[255,16,1.3,0.9],[298,7,0.9,0.75],[345,20,1.1,0.85],
-  [378,38,0.8,0.7],[60,44,1.0,0.9],[148,50,0.9,0.8],[228,38,1.2,0.9],
-  [320,45,0.8,0.75],[44,60,0.9,0.85],[192,56,1.1,0.8],[268,51,0.8,0.7],
-  [385,28,1.0,0.9],[16,68,0.8,0.75],[100,64,0.9,0.8],[285,61,1.1,0.85],
-  [158,73,0.7,0.7],[332,70,0.9,0.8],[72,80,0.8,0.75],[408,58,1.0,0.9],
-  [182,86,0.7,0.65],[352,83,0.8,0.7],[232,90,0.6,0.65],[112,88,0.7,0.7],
-];
-
-function SceneCard({ isNight, condition }: { isNight: boolean; condition: string }) {
-  const skyNight   = ['#060D1F','#142750'];
-  const skyClear   = ['#4A90D9','#FFDBA0'];
-  const skyCloudy  = ['#7A8FA0','#C8D8E4'];
-  const skyRain    = ['#3A4D5A','#617888'];
-  const skySnow    = ['#8FA8BC','#DCE9F4'];
-
-  const [top, bottom] =
-    isNight ? skyNight :
-    condition === 'rain' || condition === 'storm' ? skyRain :
-    condition === 'snow' ? skySnow :
-    condition === 'cloudy' ? skyCloudy :
-    skyClear;
-
-  const groundColor = isNight ? '#060D18' : condition === 'rain' ? '#293840' : '#2B5A18';
-  const groundColor2 = isNight ? '#0A1428' : condition === 'rain' ? '#364E58' : '#3A7020';
-
-  return (
-    <svg width="100%" height="100%" viewBox="0 0 480 200" preserveAspectRatio="xMidYMid slice"
-      xmlns="http://www.w3.org/2000/svg" style={{ position: 'absolute', inset: 0, display: 'block' }}>
-        <defs>
-          <linearGradient id="sc-sky" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={top} />
-            <stop offset="100%" stopColor={bottom} />
-          </linearGradient>
-        </defs>
-
-        {/* Sky */}
-        <rect width="480" height="200" fill="url(#sc-sky)" />
-
-        {isNight ? (
-          <>
-            {/* Stars */}
-            {STARS.map(([x, y, r, op], i) => (
-              <circle key={i} cx={x} cy={y} r={r} fill="white" opacity={op} />
-            ))}
-            {/* Moon — crescent via two circles */}
-            <circle cx="400" cy="36" r="24" fill="#E8DDD0" />
-            <circle cx="410" cy="28" r="22" fill={top} />
-            {/* Ground hills */}
-            <path d="M0 155 Q60 138 130 148 Q200 158 270 142 Q340 128 410 140 Q445 146 480 138 L480 200 L0 200 Z" fill={groundColor} />
-            <path d="M0 165 Q50 158 110 162 Q200 168 290 158 Q370 150 480 160 L480 200 L0 200 Z" fill={groundColor2} />
-            {/* Trees */}
-            <path d="M72 150 L80 122 L88 150 Z" fill={groundColor} />
-            <path d="M84 150 L90 130 L96 150 Z" fill="#070F1E" />
-            <path d="M330 138 L338 108 L346 138 Z" fill={groundColor} />
-            {/* Person silhouette — looking up, tilted head */}
-            <ellipse cx="240" cy="133" rx="7" ry="7.5" fill={groundColor} />
-            <rect x="237" y="140" width="6" height="14" rx="3" fill={groundColor} />
-            <line x1="237" y1="146" x2="228" y2="152" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="243" y1="146" x2="250" y2="150" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="238" y1="154" x2="234" y2="166" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="243" y1="154" x2="247" y2="166" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
-          </>
-        ) : condition === 'rain' || condition === 'storm' ? (
-          <>
-            {/* Storm clouds */}
-            <ellipse cx="90" cy="46" rx="68" ry="32" fill="#4A5E6A" opacity="0.9" />
-            <ellipse cx="240" cy="30" rx="90" ry="38" fill="#3C505A" />
-            <ellipse cx="390" cy="50" rx="72" ry="30" fill="#4A5E6A" opacity="0.8" />
-            {/* Rain streaks */}
-            {[52,72,92,132,152,195,225,268,308,345,372,412].map((x, i) => (
-              <line key={i} x1={x} y1={70 + (i % 3) * 8} x2={x - 5} y2={90 + (i % 3) * 8}
-                stroke="rgba(175,210,230,0.65)" strokeWidth="1.5" />
-            ))}
-            {/* Ground */}
-            <path d="M0 158 Q120 148 240 155 Q360 162 480 150 L480 200 L0 200 Z" fill={groundColor} />
-            <path d="M0 168 Q100 162 200 166 Q340 172 480 164 L480 200 L0 200 Z" fill={groundColor2} />
-            {/* Person with umbrella */}
-            <ellipse cx="240" cy="136" rx="7" ry="7" fill={groundColor} />
-            <rect x="237" y="143" width="6" height="14" rx="3" fill={groundColor} />
-            <line x1="237" y1="148" x2="228" y2="154" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="243" y1="148" x2="250" y2="152" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="238" y1="157" x2="234" y2="168" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="243" y1="157" x2="247" y2="168" stroke={groundColor} strokeWidth="3.5" strokeLinecap="round" />
-            {/* Umbrella */}
-            <path d="M226 130 Q240 118 254 130 Q247 130 240 128 Q233 130 226 130 Z" fill="#FF7043" opacity="0.9" />
-            <line x1="240" y1="130" x2="240" y2="142" stroke="#FF7043" strokeWidth="1.8" strokeLinecap="round" opacity="0.9" />
-          </>
-        ) : (
-          <>
-            {/* Sun with soft glow */}
-            <circle cx="380" cy="46" r="44" fill="#FFDD60" opacity="0.18" />
-            <circle cx="380" cy="46" r="32" fill="#FFDD60" opacity="0.35" />
-            <circle cx="380" cy="46" r="22" fill="#FFCA28" />
-            {/* Clouds if partly cloudy */}
-            {condition === 'cloudy' && (
-              <>
-                <ellipse cx="100" cy="58" rx="62" ry="24" fill="rgba(255,255,255,0.55)" />
-                <ellipse cx="260" cy="40" rx="78" ry="28" fill="rgba(255,255,255,0.45)" />
-              </>
-            )}
-            {/* Rolling hills */}
-            <path d="M0 152 Q80 132 165 144 Q250 156 330 138 Q395 124 480 136 L480 200 L0 200 Z" fill={groundColor} />
-            <path d="M0 162 Q70 155 145 160 Q240 167 320 155 Q400 145 480 158 L480 200 L0 200 Z" fill={groundColor2} />
-            {/* Trees */}
-            <path d="M68 150 L76 122 L84 150 Z" fill={groundColor} />
-            <path d="M80 150 L86 132 L92 150 Z" fill="#245018" />
-            <path d="M318 136 L327 107 L336 136 Z" fill={groundColor} />
-            {/* Person */}
-            <ellipse cx="240" cy="132" rx="7" ry="7.5" fill="#1A1A1A" />
-            <rect x="237" y="139" width="6" height="14" rx="3" fill="#1A1A1A" />
-            <line x1="237" y1="145" x2="228" y2="151" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="243" y1="145" x2="252" y2="151" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="238" y1="153" x2="234" y2="164" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" />
-            <line x1="243" y1="153" x2="247" y2="164" stroke="#1A1A1A" strokeWidth="3.5" strokeLinecap="round" />
-          </>
-        )}
-    </svg>
-  );
-}
 
 const POPULAR_CITIES = [
   'New York','London','Tokyo','Paris','Dubai','Lagos','Sydney','Toronto',
@@ -203,6 +82,25 @@ export default function NowPage() {
   const [searching, setSearching] = useState(false);
   const [isNight, setIsNight] = useState(false);
   const [nowLabel, setNowLabel] = useState("right now");
+
+  // Recalculate isNight using the city's timezone once weather loads
+  useEffect(() => {
+    if (!weather?.timezone) return;
+    try {
+      const h = parseInt(
+        new Date().toLocaleTimeString('en-US', {
+          timeZone: weather.timezone, hour: '2-digit', hour12: false,
+        }).slice(0, 2), 10
+      );
+      setIsNight(h < 6 || h >= 20);
+      setNowLabel(
+        h < 6  ? 'late night'     :
+        h < 12 ? 'this morning'   :
+        h < 17 ? 'this afternoon' :
+        h < 20 ? 'this evening'   : 'tonight'
+      );
+    } catch { /* keep browser time */ }
+  }, [weather?.timezone]);
 
   useEffect(() => {
     const h = new Date().getHours();
