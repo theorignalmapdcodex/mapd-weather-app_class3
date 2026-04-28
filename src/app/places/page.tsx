@@ -86,7 +86,7 @@ export default function PlacesPage() {
   // Fetch Unsplash photos for any city missing one in state
   useEffect(() => {
     cities.forEach(c => {
-      if (!cityPhotos[c.name] && !cityAutoPhotos[c.name]) {
+      if (!cityAutoPhotos[c.name]) {
         fetchUnsplashPhoto(c.name);
       }
     });
