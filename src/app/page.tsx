@@ -336,7 +336,7 @@ export default function NowPage() {
       <CCHeader />
 
       {/* ── Hero: scene animation + all weather info overlaid ── */}
-      <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', marginBottom: 16, height: 'clamp(380px, 97vw, 460px)' }}>
+      <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', marginBottom: 16, height: 'clamp(320px, 84vw, 390px)' }}>
 
         {/* Background scene */}
         <SceneCard isNight={isNight} condition={condition} hour={cityHour} />
@@ -348,7 +348,7 @@ export default function NowPage() {
         }} />
 
         {/* Overlay content */}
-        <div style={{ position: 'absolute', inset: 0, padding: '16px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
+        <div style={{ position: 'absolute', inset: 0, padding: '16px 18px', paddingBottom: 100, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box' }}>
 
           {/* Top: city + date */}
           <div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTemperature } from "@/contexts/TemperatureContext";
 import { useWeather } from "@/contexts/WeatherContext";
@@ -35,11 +35,9 @@ export default function PlacesPage() {
   const { weather: homeWeather, loadCity } = useWeather();
   const [cities, setCities] = useState<SavedCity[]>([]);
   const [cityWeathers, setCityWeathers] = useState<Record<string, WeatherData | null>>({});
-  const [cityPhotos, setCityPhotos] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [adding, setAdding] = useState(false);
   const [cityAutoPhotos, setCityAutoPhotos] = useState<Record<string, string>>({});
-  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const fetchUnsplashPhoto = async (cityName: string): Promise<string | null> => {
     const key = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
@@ -72,8 +70,6 @@ export default function PlacesPage() {
   };
 
   useEffect(() => {
-    const savedPhotos = localStorage.getItem('cc-city-photos');
-    if (savedPhotos) { try { setCityPhotos(JSON.parse(savedPhotos)); } catch { /* ignore */ } }
     const savedAuto = localStorage.getItem('cc-unsplash-photos');
     if (savedAuto) { try { setCityAutoPhotos(JSON.parse(savedAuto)); } catch { /* ignore */ } }
 
@@ -136,34 +132,6 @@ export default function PlacesPage() {
     saveList(updated);
   };
 
-  const handlePhotoUpload = (cityName: string, file: File) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX = 600;
-        const scale = Math.min(MAX / img.width, MAX / img.height, 1);
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const compressed = canvas.toDataURL('image/jpeg', 0.72);
-        const updated = { ...cityPhotos, [cityName]: compressed };
-        setCityPhotos(updated);
-        try { localStorage.setItem('cc-city-photos', JSON.stringify(updated)); } catch { /* quota */ }
-      };
-      img.src = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const removePhoto = (cityName: string) => {
-    const updated = { ...cityPhotos };
-    delete updated[cityName];
-    setCityPhotos(updated);
-    localStorage.setItem('cc-city-photos', JSON.stringify(updated));
-  };
-
   const isHomeCity = (name: string) =>
     homeWeather?.city.toLowerCase() === name.toLowerCase();
 
@@ -221,8 +189,7 @@ export default function PlacesPage() {
         {cities.map((city, i) => {
           const w = cityWeathers[city.name];
           const isHome = isHomeCity(city.name);
-          const photo = cityPhotos[city.name] ?? cityAutoPhotos[city.name] ?? null;
-          const isUserPhoto = !!cityPhotos[city.name];
+          const photo = cityAutoPhotos[city.name] ?? null;
           const grad = FALLBACK_GRADIENTS[i % FALLBACK_GRADIENTS.length];
           const condition = w ? weatherCodeToCondition(w.current.condition.code) : 'sunny';
 
@@ -264,46 +231,6 @@ export default function PlacesPage() {
                   }}>HOME</div>
                 )}
 
-                {/* Photo upload / remove button */}
-                <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 2 }}>
-                  {isUserPhoto ? (
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(city.name)}
-                      style={{
-                        fontFamily: MONO, fontSize: 8, fontWeight: 700,
-                        color: 'rgba(255,255,255,0.85)', background: 'rgba(0,0,0,0.45)',
-                        borderRadius: 99, padding: '3px 8px', border: 'none',
-                        cursor: 'pointer', letterSpacing: 0.3,
-                      }}
-                    >✕ PHOTO</button>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => fileRefs.current[city.name]?.click()}
-                        style={{
-                          fontFamily: MONO, fontSize: 8, fontWeight: 700,
-                          color: 'rgba(255,255,255,0.75)', background: 'rgba(0,0,0,0.35)',
-                          borderRadius: 99, padding: '3px 8px', border: 'none',
-                          cursor: 'pointer', letterSpacing: 0.3,
-                        }}
-                      >+ PHOTO</button>
-                      <input
-                        ref={el => { fileRefs.current[city.name] = el; }}
-                        type="file"
-                        accept="image/*"
-                        aria-label={`Upload photo for ${city.name}`}
-                        style={{ display: 'none' }}
-                        onChange={e => {
-                          const file = e.target.files?.[0];
-                          if (file) handlePhotoUpload(city.name, file);
-                          e.target.value = '';
-                        }}
-                      />
-                    </>
-                  )}
-                </div>
               </div>
 
               {/* City info */}
